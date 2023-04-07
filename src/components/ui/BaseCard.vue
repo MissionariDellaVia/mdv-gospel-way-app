@@ -31,6 +31,11 @@ export default {
   min-height: 75vh;
 }
 
+.card-body {
+  max-width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 /* Small devices (landscape phones, 576px and up)
 @media (min-width: 576px) { ... }

@@ -1,26 +1,17 @@
 export default {
-    chiSiamo(state) {
-        return state.chiSiamo;
+    todayGospelWay(state) {
+        return state.todayGospelWay;
     },
-    attivita(state) {
-        return state.attivita;
+    connectedGospelWay(state) {
+        return state.connectedGospelWay;
     },
-    vocazione(state) {
-        return state.vocazione;
+    currentDate(state) {
+        return state.currentDate.toISOString().split('T')[0];
     },
-    approfondimenti(state) {
-        return state.approfondimenti;
-    },
-    pregaConNoi(state) {
-        return state.pregaConNoi;
-    },
-    contatti(state) {
-        return state.contatti;
-    },
-    navbar(state) {
-        return state.navbar;
-    },
-    footer(state) {
-        return state.footer;
-    },
+    textDate(state) {
+        return state.days[state.currentDate.getDay()]
+            + ' ' + state.currentDate.getDate()
+            + ' ' + state.months[state.currentDate.getMonth()]
+            + ' ' + state.currentDate.getFullYear();
+    }
 }

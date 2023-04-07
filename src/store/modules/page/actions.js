@@ -1,26 +1,28 @@
+// noinspection JSUnresolvedVariable
+
 export default {
-    async loadPage(context, page) {
-        console.debug("BEGIN: action -> page/loadPage");
-        let lang = localStorage.getItem("lang");
+    async loadGospelWay(context, date) {
+        console.info("load gospel -> " + `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/gospel/${date}`);
         const response = await fetch(
-            `${process.env.VUE_APP_FIREBASE_DATABASE_URL}/pages/${lang}/${page}.json`
+            `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/gospel/${date}`
         );
         const responseData = await response.json();
         if (!response.ok) {
-            console.log("Errore nella richiesta");
+            console.error("Errore nella richiesta");
             throw new Error(responseData.message || 'Failed to fetch!');
         }
-
-        context.commit('setPage', { data: responseData, page: page});
+        context.commit('setTodayGospelWay', responseData.today);
+        context.commit('setConnectedGospelWay', responseData.connected);
     },
     async changeDay(context, payload) {
-        console.debug("BEGIN: action -> page/changeLang");
-        console.debug("lang:" + payload.lang + ", page:" + payload.route);
-
-        localStorage.setItem('lang', ''+payload.lang);
-        context.commit('setNavbar', payload.lang);
-        context.commit('setFooter', payload.lang);
-
-        await context.dispatch('loadPage', payload.route);
+        if (payload.add) {
+            context.commit('addDay');
+        }
+        else if (payload.subtract) {
+            context.commit('subtractDay');
+        }
+        else if (payload.fullDate) {
+            context.commit('changeDate', payload.fullDate);
+        }
     }
 }

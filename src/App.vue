@@ -85,7 +85,7 @@ hr {
 /* Medium devices (tablets, 768px and up)  */
 @media (min-width: 768px) {
   .card-body {
-    max-width: 80%;
+    max-width: 90%;
     margin-left: auto;
     margin-right: auto;
   }
@@ -94,7 +94,7 @@ hr {
 /* Large devices (desktops, 992px and up) */
 @media (min-width: 992px) {
   .card-body {
-    max-width: 70%;
+    max-width: 80%;
     margin-left: auto;
     margin-right: auto;
   }
@@ -103,7 +103,7 @@ hr {
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
   .card-body {
-    max-width: 60%;
+    max-width: 80%;
     margin-left: auto;
     margin-right: auto;
   }

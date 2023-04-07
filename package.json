@@ -10,13 +10,14 @@
     "deploy": "node scripts/gh-pages-deploy.js"
   },
   "dependencies": {
-    "core-js": "^3.8.3",
     "@popperjs/core": "^2.11.6",
+    "@vuepic/vue-datepicker": "^4.3.0",
     "bootstrap": "^5.2.0",
+    "core-js": "^3.8.3",
+    "vue": "^3.2.13",
     "vue-router": "^4.1.5",
     "vue3-carousel": "^0.2.0",
-    "vuex": "^4.0.2",
-    "vue": "^3.2.13"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

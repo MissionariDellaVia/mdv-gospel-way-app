@@ -1,15 +1,16 @@
 <template>
-  <teleport to="body">
+  <teleport to="#app">
     <div v-if="show" @click="tryClose" class="backdrop"></div>
     <transition name="dialog">
       <dialog open v-if="show">
         <header>
           <slot name="header">
-            <h4 class="text-center">{{ title }}</h4>
+            <h3 class="pt-4 text-center">{{ title }}</h3>
+            <h5 v-show="subtitle" class="pt-1 text-center">{{ subtitle }}</h5>
           </slot>
         </header>
-        <section class="text-center">
-          <slot ></slot>
+        <section class="container mb-5 text-center">
+          <slot></slot>
         </section>
       </dialog>
     </transition>
@@ -26,7 +27,11 @@ export default {
     title: {
       type: String,
       required: false,
-    }
+    },
+    subtitle: {
+      type: String,
+      required: false,
+    },
   },
   emits: ['close'],
   methods: {
@@ -38,14 +43,11 @@ export default {
 </script>
 
 <style scoped>
-dialog {
-    font-family: 'CYNPiatakin', cursive;
-}
 .backdrop {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.75);
   z-index: 10;
@@ -53,16 +55,17 @@ dialog {
 
 dialog {
   position: fixed;
-  top: 20vh;
-  left: 10%;
-  width: 80%;
+  top: 8vh;
+  left: 5%;
+  width: 90%;
+  max-height: 50rem;
   z-index: 100;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
   padding: 0;
   margin: 0;
-  overflow: hidden;
-  background-color: #eff0eb;
+  overflow-y: scroll;
+  background-color: #e5eadf;
   color: #6e4f3a;
   -webkit-border-radius: 1.563rem;
   -moz-border-radius: 1.563rem;
@@ -71,11 +74,17 @@ dialog {
 
 header {
   padding: 1rem;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 800;
 }
 
 section {
   padding: 1rem;
   font-size: 0.80rem;
+}
+
+.container.dialog {
+  height: 50rem !important;
 }
 
 menu {

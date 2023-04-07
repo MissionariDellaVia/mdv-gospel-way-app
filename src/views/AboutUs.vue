@@ -27,7 +27,7 @@ export default {
     async loadPage() {
       this.isLoading = true
       const response = await fetch(
-          `${process.env.VUE_APP_MDV_BASE_URL}/page/get_pages/who_consecrateds_are/1/1`
+          `${process.env.VUE_APP_MDV_BASE_URL}/app/page/get_pages/who_consecrateds_are/1/1`
       );
        const responseData = await response.json();
       if (!response.ok) {

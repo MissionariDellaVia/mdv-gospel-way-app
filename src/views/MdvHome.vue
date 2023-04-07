@@ -1,18 +1,27 @@
 <template>
-  <div class="container">
 
-    <div class="row">
-      <base-card class="bg-layout">
+      <base-card>
         <header class="row mt-5 mb-3">
           <div class="col-12 header-section text-center">
             <div class="d-flex justify-content-center align-items-center">
-              <i class="fa-solid fa-chevron-left home-icon px-2"></i>
-              <h1 class="color3"> Lunedì 3 Aprile </h1>
-              <i class="fa-solid fa-chevron-right home-icon px-2"></i>
+              <i class="fa-solid fa-chevron-left home-icon px-2" @click="handleDateChange(false,true,null)"></i>
+              <h1 class="color3"> {{ textDate }} </h1>
+              <i class="fa-solid fa-chevron-right home-icon px-2" @click="handleDateChange(true,false,null)"></i>
             </div>
           </div>
           <div class="col-12 header-section text-center">
-            <i class="fa-regular fa-calendar-days home-icon"></i>
+            <vue-date-picker
+                v-model="currentDate"
+                :enable-time-picker="false"
+                hide-offset-dates
+                auto-apply
+                @update:model-value="handleDateChange(false,false,currentDate)">
+              <template #trigger>
+                <i class="fa-regular fa-calendar-days home-icon"></i>
+              </template>
+            </vue-date-picker>
+
+
           </div>
         </header>
 
@@ -27,10 +36,10 @@
 
         <section class="row my-5 g-2">
           <div class="col-md-6">
-            <base-button title="Chi siamo" @click="handleClick" class="bg-1"></base-button>
+            <base-button title="Chi siamo" @click="handleClick('chi-siamo')" class="bg-1"></base-button>
           </div>
           <div class="col-md-6">
-            <base-button title="Via del Vangelo" class="bg-2"></base-button>
+            <base-button title="Via del Vangelo" class="bg-2" @click="handleClick('via-del-vangelo', true)"></base-button>
           </div>
         </section>
 
@@ -48,22 +57,36 @@
         </section>
 
       </base-card>
-    </div>
 
-  </div>
 </template>
 
 <script>
 export default {
   data() {
     return {
-      dialog: false
+      currentDate: new Date()
     }
   },
+  computed: {
+    textDate() {
+      return this.$store.getters['page/textDate'];
+    },
+  },
   methods: {
-    handleClick() {
-      this.$router.push('chi-siamo');
-    }
+    handleClick(route, date) {
+      if (date) {
+        this.$router.push(route + '/' + this.$store.getters['page/currentDate']);
+      }
+      else {
+        this.$router.push(route)
+      }
+    },
+    handleDateChange(add,subtract,date) {
+      if (date) {
+        console.log(date)
+      }
+      this.$store.dispatch('page/changeDay', {'add': add, 'subtract': subtract, 'fullDate': date});
+    },
   }
 
 }
@@ -95,5 +118,4 @@ export default {
   background-color: #B2A348 !important;
   color: white;
 }
-
 </style>
