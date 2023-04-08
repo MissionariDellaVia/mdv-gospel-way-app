@@ -9,6 +9,9 @@ export default {
         state.saint = payload.saint
         state.liturgy = payload.liturgy
     },
+    setAllowedDates(state, payload) {
+        state.allowedDates = payload
+    },
     addDay(state) {
         state.currentDate = new Date(
             state.currentDate.setDate(state.currentDate.getDate() + 1)

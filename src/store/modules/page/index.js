@@ -10,6 +10,7 @@ export default {
             connectedGospelWay: [],
             saint: null,
             liturgy: null,
+            allowedDates: [],
             currentDate: new Date(),
             days: ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'],
             months: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],

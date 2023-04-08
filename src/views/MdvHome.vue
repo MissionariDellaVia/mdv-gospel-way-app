@@ -16,6 +16,7 @@
             <vue-date-picker
                 v-model="currentDate"
                 :enable-time-picker="false"
+                :allowed-dates="allowedDates"
                 hide-offset-dates
                 auto-apply
                 @update:model-value="handleDateChange(false,false,currentDate)">
@@ -64,6 +65,7 @@
 export default {
   created() {
     this.loadHomeInfo()
+    this.loadAllowedDates()
   },
   data() {
     return {
@@ -72,6 +74,9 @@ export default {
     }
   },
   computed: {
+    allowedDates() {
+      return this.$store.getters['page/allowedDates'];
+    },
     saint() {
       return this.$store.getters['page/saint'];
     },
@@ -99,6 +104,15 @@ export default {
       this.isLoading = true;
       try {
         await this.$store.dispatch('page/loadHomeInfo');
+      } catch (error) {
+        // this.showToast(error.message || 'Errore caricamento pagina!');
+      }
+      this.isLoading = false;
+    },
+    async loadAllowedDates() {
+      this.isLoading = true;
+      try {
+        await this.$store.dispatch('page/loadAllowedDates');
       } catch (error) {
         // this.showToast(error.message || 'Errore caricamento pagina!');
       }

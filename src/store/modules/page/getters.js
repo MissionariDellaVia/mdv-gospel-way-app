@@ -11,6 +11,9 @@ export default {
     liturgy(state) {
         return state.liturgy;
     },
+    allowedDates(state) {
+        return state.allowedDates;
+    },
     currentDate(state) {
         return state.currentDate.toISOString().split('T')[0];
     },
