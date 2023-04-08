@@ -27,7 +27,7 @@
     <div v-if="isLoading">
       <base-spinner></base-spinner>
     </div>
-    <section v-else class="html-raw">
+    <section v-else class="html-raw" @click.right.prevent @keydown="keydown" @copy.prevent @paste.prevent>
       <h1 class="color3 mt-5 text-center"> Vangelo del Giorno</h1>
       <section class="row mt-5 mb-3">
         <div class="col-12">
