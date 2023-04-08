@@ -146,10 +146,16 @@ export default {
   color: #866a2f;
 }
 
-.html-raw:deep(p) {
-  color: #281D02FF;
+.html-raw:deep(p), .html-raw:deep(em) {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  color: #281D02FF !important;
   font-size: 1.2rem;
   line-height: 1.3;
+}
+.html-raw:deep(strong) {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  color: #A67D51 !important;
+  font-size: 1.2rem !important;
 }
 
 .html-raw:deep(a) {
