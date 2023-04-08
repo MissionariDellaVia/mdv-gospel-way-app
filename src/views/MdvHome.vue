@@ -1,6 +1,9 @@
 <template>
 
       <base-card>
+        <div v-if="isLoading">
+          <base-spinner></base-spinner>
+        </div>
         <header class="row mt-5 mb-3">
           <div class="col-12 header-section text-center">
             <div class="d-flex justify-content-center align-items-center">
@@ -20,25 +23,23 @@
                 <i class="fa-regular fa-calendar-days home-icon"></i>
               </template>
             </vue-date-picker>
-
-
           </div>
         </header>
 
         <section class="row header-section text-center">
-          <div class="col-12 ">
-            <h3 class="color5 fw-bold">S. Sisto I</h3>
+          <div  v-show="saint" class="col-12 ">
+            <h3 class="color5 fw-bold">{{ saint }}</h3>
           </div>
-          <div class="col-12">
-            <h3 class="color4">Settimana Santa</h3>
+          <div v-show="liturgy" class="col-12">
+            <h3 class="color4">{{ liturgy }}</h3>
           </div>
         </section>
 
         <section class="row my-5 g-2">
-          <div class="col-md-6">
+          <div class="col-md-6 text-md-end">
             <base-button title="Chi siamo" @click="handleClick('chi-siamo')" class="bg-1"></base-button>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-6 text-md-start">
             <base-button title="Via del Vangelo" class="bg-2" @click="handleClick('via-del-vangelo', true)"></base-button>
           </div>
         </section>
@@ -55,22 +56,31 @@
             puoi richiederlo <strong>scrivendoci</strong>
           </p>
         </section>
-
       </base-card>
 
 </template>
 
 <script>
 export default {
+  created() {
+    this.loadHomeInfo()
+  },
   data() {
     return {
-      currentDate: new Date()
+      currentDate: new Date(),
+      isLoading: false
     }
   },
   computed: {
+    saint() {
+      return this.$store.getters['page/saint'];
+    },
+    liturgy() {
+      return this.$store.getters['page/liturgy'];
+    },
     textDate() {
       return this.$store.getters['page/textDate'];
-    },
+    }
   },
   methods: {
     handleClick(route, date) {
@@ -81,11 +91,18 @@ export default {
         this.$router.push(route)
       }
     },
-    handleDateChange(add,subtract,date) {
-      if (date) {
-        console.log(date)
-      }
+    async handleDateChange(add,subtract,date) {
       this.$store.dispatch('page/changeDay', {'add': add, 'subtract': subtract, 'fullDate': date});
+      await this.loadHomeInfo()
+    },
+    async loadHomeInfo() {
+      this.isLoading = true;
+      try {
+        await this.$store.dispatch('page/loadHomeInfo');
+      } catch (error) {
+        // this.showToast(error.message || 'Errore caricamento pagina!');
+      }
+      this.isLoading = false;
     },
   }
 

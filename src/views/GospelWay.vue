@@ -55,8 +55,8 @@
           <div class="my-1" v-html="currentGospelWay.extra"></div>
         </div>
       </section>
-      <hr class="fade-hr my-5 mx-auto">
-      <section class="row mb-3">
+      <hr v-if="connectedGospelComment.length > 0" class="fade-hr my-5 mx-auto">
+      <section v-if="connectedGospelComment.length > 0" class="row mb-3">
         <div class="col-12 header-section text-center">
           <h4 class="mb-4 color4 fw-bold"> Commenti al Vangelo passati </h4>
         </div>

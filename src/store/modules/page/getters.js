@@ -5,6 +5,12 @@ export default {
     connectedGospelWay(state) {
         return state.connectedGospelWay;
     },
+    saint(state) {
+        return state.saint;
+    },
+    liturgy(state) {
+        return state.liturgy;
+    },
     currentDate(state) {
         return state.currentDate.toISOString().split('T')[0];
     },

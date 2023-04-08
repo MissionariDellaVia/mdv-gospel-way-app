@@ -48,4 +48,32 @@ export default {
 
 /* Extra large devices (large desktops, 1200px and up)
 @media (min-width: 1200px) { ... }*/
+
+/* Medium devices (tablets, 768px and up)  */
+@media (min-width: 768px) {
+  .card {
+    width: 90%;
+  }
+  .card-body {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+  .card-body {
+    max-width: 85%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+  .card {
+    width: 80%;
+  }
+}
 </style>

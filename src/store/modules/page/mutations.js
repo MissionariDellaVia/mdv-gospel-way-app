@@ -5,6 +5,10 @@ export default {
     setConnectedGospelWay(state, payload) {
         state.connectedGospelWay = payload
     },
+    setHomeInfo(state, payload) {
+        state.saint = payload.saint
+        state.liturgy = payload.liturgy
+    },
     addDay(state) {
         state.currentDate = new Date(
             state.currentDate.setDate(state.currentDate.getDate() + 1)
