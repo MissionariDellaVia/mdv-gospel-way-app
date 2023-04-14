@@ -59,7 +59,7 @@ dialog {
   top: 8vh;
   left: 4%;
   width: 90%;
-  max-height: 50rem;
+  max-height: 40rem !important;
   z-index: 100;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
