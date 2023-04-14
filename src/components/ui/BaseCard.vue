@@ -24,7 +24,7 @@ export default {
 .card {
   color: #29140b;
   background-color: #E6DECA;
-  width: 95%;
+  width: 100%;
   -webkit-border-radius: 1.2rem;
   -moz-border-radius: 1.2rem;
   border-radius: 1.2rem;

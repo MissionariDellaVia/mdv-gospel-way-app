@@ -4,6 +4,8 @@ import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store/index.js';
 import VueDatePicker from '@vuepic/vue-datepicker';
+import Vue3TouchEvents from "vue3-touch-events";
+
 import '@vuepic/vue-datepicker/dist/main.css'
 import 'vue3-carousel/dist/carousel.css';
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -18,6 +20,8 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 const app = createApp(App)
 app.use(router);
 app.use(store);
+app.use(Vue3TouchEvents);
+
 app.config.globalProperties.$util = utilityFunction;
 
 app.component('base-card', BaseCard);

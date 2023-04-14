@@ -27,46 +27,54 @@
     <div v-if="isLoading">
       <base-spinner></base-spinner>
     </div>
-    <section v-else class="html-raw" @click.right.prevent @keydown="keydown" @copy.prevent @paste.prevent>
-      <h1 class="color3 mt-5 text-center"> Vangelo del Giorno</h1>
-      <section class="row mt-5 mb-3">
-        <div class="col-12">
-          <base-button title="Preghiera allo Spirito Santo" @click="showDialogPreghiera" class="bg-1"></base-button>
+    <section v-else >
+      <header>
+        <h1 class="color3 mt-5 text-center"> Vangelo del Giorno</h1>
+        <span class="subtitle mt-5 text-center "> {{ textDate }}</span>
+        <div class="row mt-5 mb-3">
+          <div class="col-12">
+            <base-button title="Preghiera allo Spirito Santo" @click="showDialogPreghiera" class="bg-1"></base-button>
+          </div>
         </div>
-      </section>
+        <h4 class="color3 mt-5 text-center"> {{ currentGospelWay.sacred_texts }}</h4>
+      </header>
       <hr class="fade-hr my-5 mx-auto">
-      <section class="row mb-3">
-        <div class="col-12 header-section text-center">
-          <h4 class="evangelist-title"> Dal vangelo secondo <strong>{{ currentGospelWay.evangelist }}</strong></h4>
-          <div class="my-1" v-html="currentGospelWay.text"></div>
+
+      <section class="html-raw" @click.right.prevent @keydown="keydown" @copy.prevent @paste.prevent>
+        <div class="row mb-3">
+          <div class="col-12 header-section text-center">
+            <h4 class="evangelist-title"> Dal vangelo secondo <strong>{{ currentGospelWay.evangelist }}</strong></h4>
+            <div class="my-1" v-html="cleanedText"></div>
+          </div>
+        </div>
+        <hr class="fade-hr my-5 mx-auto">
+        <div class="row mb-3">
+          <div class="col-12 header-section text-center">
+            <h4 class="mb-4 color4 fw-bold"> Commento al Vangelo</h4>
+            <div class="my-1" v-html="cleanedComment"></div>
+          </div>
+        </div>
+        <hr v-show="cleanedExtra" class="fade-hr my-5 mx-auto">
+        <div v-show="cleanedExtra" class="row mb-3">
+          <div class="col-12 header-section text-center">
+            <h4 class="mb-4 color4 fw-bold"> Extra </h4>
+            <div class="my-1" v-html="cleanedExtra"></div>
+          </div>
+        </div>
+        <hr v-if="connectedGospelComment.length > 0" class="fade-hr my-5 mx-auto">
+        <div v-if="connectedGospelComment.length > 0" class="row mb-3">
+          <div class="col-12 header-section text-center">
+            <h4 class="mb-4 color4 fw-bold"> Commenti al Vangelo passati </h4>
+          </div>
+          <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
+            <h5 class="color5 fw-bold clickable"
+                @click="showDialogConnected(c.date, c.comment, c.extra)">
+              Commenti al Vangelo del {{ c.date }}
+            </h5>
+          </div>
         </div>
       </section>
-      <hr class="fade-hr my-5 mx-auto">
-      <section class="row mb-3">
-        <div class="col-12 header-section text-center">
-          <h4 class="mb-4 color4 fw-bold"> Commento al Vangelo</h4>
-          <div class="my-1" v-html="currentGospelWay.comment"></div>
-        </div>
-      </section>
-      <hr class="fade-hr my-5 mx-auto">
-      <section class="row mb-3">
-        <div class="col-12 header-section text-center">
-          <h4 class="mb-4 color4 fw-bold"> Extra </h4>
-          <div class="my-1" v-html="currentGospelWay.extra"></div>
-        </div>
-      </section>
-      <hr v-if="connectedGospelComment.length > 0" class="fade-hr my-5 mx-auto">
-      <section v-if="connectedGospelComment.length > 0" class="row mb-3">
-        <div class="col-12 header-section text-center">
-          <h4 class="mb-4 color4 fw-bold"> Commenti al Vangelo passati </h4>
-        </div>
-        <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
-          <h5 class="color5 fw-bold clickable"
-              @click="showDialogConnected(c.date, c.comment, c.extra)">
-            Commenti al Vangelo del {{ c.date }}
-          </h5>
-        </div>
-      </section>
+
     </section>
   </base-card>
 </template>
@@ -90,6 +98,18 @@ export default {
     }
   },
   computed: {
+    textDate() {
+      return this.$store.getters['page/textDate'];
+    },
+    cleanedExtra() {
+      return this.$store.getters['page/todayGospelWay'].extra.replace(/style="font-family:.*;"/gm,'')
+    },
+    cleanedText() {
+      return this.$store.getters['page/todayGospelWay'].text.replace(/style="font-family:.*;"/gm,'')
+    },
+    cleanedComment() {
+      return this.$store.getters['page/todayGospelWay'].comment.replace(/style="font-family:.*;"/gm,'')
+    },
     currentGospelWay() {
       return this.$store.getters['page/todayGospelWay'];
     },
@@ -136,6 +156,11 @@ export default {
   color: white;
 }
 
+.subtitle{
+  font-size: 1rem;
+  color: #A67D51;
+}
+
 .header-section {
   font-family: 'Barlow Semi Condensed', sans-serif;
 }
@@ -155,6 +180,17 @@ export default {
 .html-raw:deep(strong) {
   font-family: 'Barlow Semi Condensed', sans-serif;
   color: #A67D51 !important;
+  font-size: 1.2rem !important;
+}
+
+.html-raw:deep(span) {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  color: #281D02FF !important;
+  font-size: 1.2rem !important;
+}
+.html-raw:deep(em) {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  color: #281D02FF !important;
   font-size: 1.2rem !important;
 }
 

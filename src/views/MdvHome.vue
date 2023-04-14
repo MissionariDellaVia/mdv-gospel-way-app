@@ -1,6 +1,6 @@
 <template>
 
-      <base-card>
+      <base-card v-touch:swipe="handleSwipe">
         <div v-if="isLoading">
           <base-spinner></base-spinner>
         </div>
@@ -88,6 +88,14 @@ export default {
     }
   },
   methods: {
+    handleSwipe(direction) {
+      if (direction === 'left') {
+        this.handleDateChange(true,false,null)
+      }
+      if (direction === 'right') {
+        this.handleDateChange(false,true,null)
+      }
+    },
     handleClick(route, date) {
       if (date) {
         this.$router.push(route + '/' + this.$store.getters['page/currentDate']);
@@ -148,5 +156,16 @@ export default {
 .bg-2 {
   background-color: #B2A348 !important;
   color: white;
+}
+a {
+  text-decoration: none !important;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #b0a247;
+  transition: all .1s;
+}
+
+a:hover {
+  color: #b28555;
 }
 </style>
