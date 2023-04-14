@@ -41,6 +41,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #d3b282;
+  overflow-x: hidden;
 }
 
 .logo-img {

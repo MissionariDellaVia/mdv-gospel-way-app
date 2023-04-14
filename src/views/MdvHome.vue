@@ -16,7 +16,7 @@
             <vue-date-picker
                 v-model="currentDate"
                 :enable-time-picker="false"
-                :allowed-dates="allowedDates"
+                :max-date="allowedDates[0]"
                 hide-offset-dates
                 auto-apply
                 @update:model-value="handleDateChange(false,false,currentDate)">

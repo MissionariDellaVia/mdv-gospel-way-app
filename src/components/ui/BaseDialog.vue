@@ -57,7 +57,7 @@ export default {
 dialog {
   position: fixed;
   top: 8vh;
-  left: 5%;
+  left: 4%;
   width: 90%;
   max-height: 50rem;
   z-index: 100;

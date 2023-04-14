@@ -21,7 +21,7 @@
         :title="dialogConnected.title"
         @close="cleanDialogConnected">
       <div class="html-raw my-1" v-html="dialogConnected.content"></div>
-      <div class="html-raw my-1" v-html="currentGospelWay.extra"></div>
+      <div class="html-raw my-1" v-html="dialogConnected.extra"></div>
     </base-dialog>
 
     <div v-if="isLoading">
@@ -53,6 +53,19 @@
             <h4 class="mb-4 color4 fw-bold"> Commento al Vangelo</h4>
             <div class="my-1" v-html="cleanedComment"></div>
           </div>
+
+          <section v-show="connectedGospelComment.length > 0">
+            <div class="col-12 header-section text-center">
+              <h5 class="my-4 color4 fw-bold"> commenti meno recenti </h5>
+            </div>
+            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
+              <small class="color5 fw-bold clickable"
+                     @click="showDialogConnected('Commento del ' + c.date, c.comment, null)">
+                Commento del {{ c.date }}
+              </small>
+            </div>
+          </section>
+
         </div>
         <hr v-show="cleanedExtra" class="fade-hr my-5 mx-auto">
         <div v-show="cleanedExtra" class="row mb-3">
@@ -60,19 +73,21 @@
             <h4 class="mb-4 color4 fw-bold"> Extra </h4>
             <div class="my-1" v-html="cleanedExtra"></div>
           </div>
+
+          <section v-show="connectedGospelComment.length > 0">
+            <div class="col-12 header-section text-center">
+              <h5 class="my-4 color4 fw-bold"> extra meno recenti </h5>
+            </div>
+            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
+              <small class="color5 fw-bold clickable"
+                     @click="showDialogConnected('Commento extra del ' + c.date, null, c.extra)">
+                Extra del {{ c.date }}
+              </small>
+            </div>
+          </section>
+
         </div>
-        <hr v-if="connectedGospelComment.length > 0" class="fade-hr my-5 mx-auto">
-        <div v-if="connectedGospelComment.length > 0" class="row mb-3">
-          <div class="col-12 header-section text-center">
-            <h4 class="mb-4 color4 fw-bold"> Commenti al Vangelo passati </h4>
-          </div>
-          <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
-            <h5 class="color5 fw-bold clickable"
-                @click="showDialogConnected(c.date, c.comment, c.extra)">
-              Commenti al Vangelo del {{ c.date }}
-            </h5>
-          </div>
-        </div>
+
       </section>
 
     </section>
@@ -135,9 +150,13 @@ export default {
     },
     showDialogConnected(title, content, extra) {
       this.dialogConnected.show = true;
-      this.dialogConnected.title = 'Commento del ' + title
-      this.dialogConnected.content = content
-      this.dialogConnected.extra = extra
+      this.dialogConnected.title = title
+      if (content) {
+        this.dialogConnected.content = content.replace(/style="font-family:.*;"/gm,'')
+      }
+      if (extra) {
+        this.dialogConnected.extra = extra.replace(/style="font-family:.*;"/gm,'')
+      }
     },
     cleanDialogConnected() {
       this.dialogConnected.show = false
