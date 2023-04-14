@@ -50,11 +50,11 @@
         <section class="row">
           <p class="intro color1">
             Caro fratello o sorella <strong>benvenuto/a!</strong><br><br>
-            Quest'App contiene il diario spirituale della Comunità sul Vangelo del giorno. L'abbiamo realizzata perchè potesse servire anche a te!
+            Questo sito contiene il diario spirituale della Comunità sul Vangelo del giorno. L'abbiamo realizzata perchè potesse servire anche a te!
             Questo commento è un aiuto per meditare e costudire almeno una parola del Vangelo, perchè possa portare frutto nel cammino quotidiano alla sequela di Gesù e per vivere il carisma della comunità più intensamente!<br><br>
             Se volessi il libretto cartaceo trimestrale<br>
             (da poter sottolineare e dove poter prendere appunti)
-            puoi richiederlo <strong>scrivendoci</strong>
+            puoi richiederlo <a href="mailto:missioanridellab">scrivendoci</a>
           </p>
         </section>
       </base-card>

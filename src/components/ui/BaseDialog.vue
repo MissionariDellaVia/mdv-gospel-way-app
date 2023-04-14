@@ -4,6 +4,7 @@
     <transition name="dialog">
       <dialog open v-if="show">
         <header>
+          <i class="float-end fa-solid fa-xmark clickable" @click="tryClose"></i>
           <slot name="header">
             <h3 class="pt-4 text-center">{{ title }}</h3>
             <h5 v-show="subtitle" class="pt-1 text-center">{{ subtitle }}</h5>
@@ -92,6 +93,10 @@ menu {
   display: flex;
   justify-content: flex-end;
   margin: 0;
+}
+
+.fa-xmark{
+  font-size: 1.7rem;
 }
 
 .dialog-enter-from,
