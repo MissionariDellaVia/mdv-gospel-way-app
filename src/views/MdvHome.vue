@@ -77,11 +77,11 @@
 
 <script>
 export default {
-  metaInfo() {
-    return {
-      title: 'Missionari della Via Home',
-    }
-  },
+  // metaInfo() {
+  //   return {
+  //     title: 'La Via del Vangelo',
+  //   }
+  // },
   created() {
     this.loadHomeInfo()
     this.loadAllowedDates()

@@ -25,7 +25,7 @@ function pushRoute(route) {
 }
 
 useMeta({
-  title: 'Missionari della Via',
+  title: 'La Via del Vangelo',
   htmlAttrs: {
     lang: 'it',
     amp: true
