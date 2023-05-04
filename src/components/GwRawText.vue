@@ -21,7 +21,8 @@ const props = defineProps({
   showDivider: Boolean
 })
 const cleanedText = computed( () => {
-  return props.text?.replace(/style="font-family:.*;"/gm, '');
+  let c = props.text?.replace(/style="font-family:.*;"/gm, '');
+  return c?.replaceAll(/IMG\d/gm, '');
 })
 </script>
 
