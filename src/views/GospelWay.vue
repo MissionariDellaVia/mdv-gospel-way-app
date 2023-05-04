@@ -44,6 +44,7 @@
       />
 
       <gw-embed-video
+          v-show="videos && videos.lenght > 0"
           title="Video"
           :related="videos"
           :show-divider="true"
@@ -111,7 +112,7 @@ function cleanDialogPreghiera() {
 }
 
 .subtitle{
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #A67D51;
 }
 
