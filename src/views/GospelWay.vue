@@ -44,9 +44,7 @@
       />
 
       <gw-embed-video
-          v-show="currentGospelWay.video"
           title="Video"
-          :url="currentGospelWay.video"
           :related="videos"
           :show-divider="true"
       />
@@ -55,44 +53,6 @@
           v-show="connected"
           :relatedData="connected"
       />
-
-<!--      <section class="html-raw" @click.right.prevent @keydown="keydown" @copy.prevent @paste.prevent>-->
-
-<!--          <section v-show="connectedGospelComment.length > 0">-->
-<!--            <div class="col-12 header-section text-center">-->
-<!--              <h5 class="my-4 color4 fw-bold"> commenti meno recenti </h5>-->
-<!--            </div>-->
-<!--            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">-->
-<!--              <small class="color5 fw-bold clickable"-->
-<!--                     @click="showDialogConnected('Commento del ' + c.date, c.comment, null)">-->
-<!--                Commento del {{ c.date }}-->
-<!--              </small>-->
-<!--            </div>-->
-<!--          </section>-->
-
-<!--        </div>-->
-<!--        <hr v-show="cleanedExtra" class="fade-hr my-5 mx-auto">-->
-<!--        <div v-show="cleanedExtra" class="row mb-3">-->
-<!--          <div class="col-12 header-section text-center">-->
-<!--            <h4 class="mb-4 color4 fw-bold"> Extra </h4>-->
-<!--            <div class="my-1" v-html="cleanedExtra"></div>-->
-<!--          </div>-->
-
-<!--          <section v-show="connectedGospelComment.length > 0">-->
-<!--            <div class="col-12 header-section text-center">-->
-<!--              <h5 class="my-4 color4 fw-bold"> extra meno recenti </h5>-->
-<!--            </div>-->
-<!--            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">-->
-<!--              <small class="color5 fw-bold clickable"-->
-<!--                     @click="showDialogConnected('Commento extra del ' + c.date, null, c.extra)">-->
-<!--                Extra del {{ c.date }}-->
-<!--              </small>-->
-<!--            </div>-->
-<!--          </section>-->
-
-<!--        </div>-->
-
-<!--      </section>-->
 
     </section>
   </base-card>
@@ -122,7 +82,7 @@ const textDate = computed(() => store.getters['page/textDate']);
 const currentGospelWay = computed(() => store.getters['page/todayGospelWay']);
 const connected = computed(() => store.getters['page/connectedGospelWay']);
 const videos = computed(() => store.getters['page/connectedVideos']);
-console.log(videos)
+console.log(currentGospelWay)
 
 async function loadPage(date) {
   isLoading.value = true;

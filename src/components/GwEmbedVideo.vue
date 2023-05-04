@@ -5,15 +5,8 @@
           <h4 v-show="title" class="mb-4 color4 fw-bold"> {{ title }}</h4>
         </div>
       </div>
-      <div class="rwd-video mb-5">
-        <iframe :src="'//www.youtube.com/embed/'+videoId"
-                allowfullscreen=""
-                height="300"
-                width="300">
-        </iframe>
-      </div>
-      <h5 v-show="related && related.length > 0" class="mb-4 color4 fw-bold"> Altri video </h5>
-      <div v-for="(v,index) in related" v-bind:key="index"  class="rwd-video mb-4">
+
+      <div v-show="related && related.length > 0" v-for="(v,index) in related" v-bind:key="index"  class="rwd-video mb-4">
         <iframe :src="'//www.youtube.com/embed/'+getYoutubeId(v)"
                 allowfullscreen=""
                 height="300"
@@ -21,17 +14,17 @@
         </iframe>
       </div>
 
+
       <hr v-show="showDivider" class="fade-hr my-5 mx-auto">
 
     </section>
 </template>
 
 <script setup>
-import {computed, defineProps} from 'vue'
+import {defineProps} from 'vue'
 
-const props = defineProps({
+defineProps({
   title: String,
-  url: String,
   related: Array,
   showDivider: Boolean
 })
@@ -45,11 +38,6 @@ function getYoutubeId(url) {
       : null;
 }
 
-const videoId = computed( () => {
-  let id = getYoutubeId(props.url);
-  console.log(id)
-  return getYoutubeId(props.url);
-})
 </script>
 
 <style scoped>
