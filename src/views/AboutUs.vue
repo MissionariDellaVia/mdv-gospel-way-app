@@ -51,13 +51,13 @@
 
       <h4 class="mt-5 color4"> Email Frati </h4>
       <a href="mailto:missionaridellavia.lamezia@gmail.com">missionaridellavia.lamezia@gmail.com</a><br>
-      <a href="mailto:missionaridellavia.napoli@gmail.com">missionaridellavia.lamezia@gmail.com</a><br>
-      <a href="mailto:missionaridellavia.nicotera@gmail.com">missionaridellavia.lamezia@gmail.com</a>
+      <a href="mailto:missionaridellavia.napoli@gmail.com">missionaridellavia.napoli@gmail.com</a><br>
+      <a href="mailto:missionaridellavia.nicotera@gmail.com">missionaridellavia.nicotera@gmail.com</a>
 
       <h4 class="mt-5 color4"> Email Suore </h4>
       <a href="mailto:missionariedellavia.lamezia@gmail.com">missionaridellavia.lamezia@gmail.com</a><br>
-      <a href="mailto:missionariedellavia.napoli@gmail.com">missionaridellavia.lamezia@gmail.com</a><br>
-      <a href="mailto:missionariedellavia.nicotera@gmail.com">missionaridellavia.lamezia@gmail.com</a>
+      <a href="mailto:missionariedellavia.napoli@gmail.com">missionaridellavia.napoli@gmail.com</a><br>
+      <a href="mailto:missionariedellavia.nicotera@gmail.com">missionaridellavia.nicotera@gmail.com</a>
 
       <div class="row my-5 text-center">
         <ul class="list-inline social-network social-circle">
@@ -84,9 +84,9 @@ export default {
       page: null,
       links: [
         {name: "Missionari della via", ref: "http://www.missionaridellavia.net/", img: "footer-missionari.jpg"},
-        {name: "Vocazione", ref: "http://www.missionaridellavia.net/", img: "footer-vocazione.jpg"},
-        {name: "Comunità", ref: "http://www.missionaridellavia.net/", img: "footer-comunita.jpg"},
-        {name: "Blog", ref: "http://www.missionaridellavia.net/", img: "footer-blog.jpg"}
+        {name: "Vocazione", ref: "https://www.vocazione.altervista.org/#/", img: "footer-vocazione.jpg"},
+        {name: "Comunità", ref: "https://www.cristianidistrada.net/", img: "footer-comunita.jpg"},
+        {name: "Blog", ref: "https://blogdeipiccolidellavia.blogspot.com/", img: "footer-blog.jpg"}
       ],
       breakpoints: {
         // 700px and up

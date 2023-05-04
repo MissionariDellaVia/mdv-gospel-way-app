@@ -23,6 +23,7 @@
     <section v-else >
       <header>
         <h1 class="color3 mt-5 text-center"> Vangelo del Giorno</h1>
+        <h4 class="my-2 color3 text-center "> {{ liturgy }}</h4>
         <span class="subtitle mt-5 text-center "> {{ textDate }}</span>
         <div class="row mt-5 mb-3">
           <div class="col-12">
@@ -44,7 +45,7 @@
       />
 
       <gw-embed-video
-          v-show="videos && videos.lenght > 0"
+          v-show="videos"
           title="Video"
           :related="videos"
           :show-divider="true"
@@ -80,10 +81,11 @@ const dialog = ref(false)
 const isLoading = ref(false)
 
 const textDate = computed(() => store.getters['page/textDate']);
+const liturgy = computed(() => store.getters['page/liturgy']);
 const currentGospelWay = computed(() => store.getters['page/todayGospelWay']);
 const connected = computed(() => store.getters['page/connectedGospelWay']);
 const videos = computed(() => store.getters['page/connectedVideos']);
-console.log(currentGospelWay)
+
 
 async function loadPage(date) {
   isLoading.value = true;
