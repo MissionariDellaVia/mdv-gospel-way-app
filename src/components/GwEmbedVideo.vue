@@ -1,23 +1,20 @@
 <template>
-    <section >
-      <div class="row my-3">
-        <div class="col-12 font-section text-center html-raw">
-          <h4 v-show="title" class="mb-4 color4 fw-bold"> {{ title }}</h4>
-        </div>
-      </div>
-
-      <div v-show="related && related.length > 0" v-for="(v,index) in related" v-bind:key="index"  class="rwd-video mb-4">
-        <iframe :src="'//www.youtube.com/embed/'+getYoutubeId(v)"
-                allowfullscreen=""
-                height="300"
-                width="300">
-        </iframe>
-      </div>
+  <section>
+    <div class="col-12 font-section text-center html-raw">
+      <h4 v-show="title" class="mb-4 color4 fw-bold"> {{ title }}</h4>
+    </div>
+    <div v-show="related && related.length > 0" v-for="(v,index) in related" v-bind:key="index" class="rwd-video mb-4">
+      <iframe :src="'//www.youtube.com/embed/'+getYoutubeId(v)"
+              allowfullscreen=""
+              height="300"
+              width="300">
+      </iframe>
+    </div>
 
 
-      <hr v-show="showDivider" class="fade-hr my-5 mx-auto">
+    <hr v-show="showDivider" class="fade-hr my-5 mx-auto">
 
-    </section>
+  </section>
 </template>
 
 <script setup>
@@ -49,6 +46,7 @@ function getYoutubeId(url) {
   /*padding-top: 30px;*/
   position: relative;
 }
+
 .rwd-video iframe,
 .rwd-video object,
 .rwd-video embed {
