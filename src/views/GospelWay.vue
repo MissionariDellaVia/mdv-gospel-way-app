@@ -1,5 +1,6 @@
 <template>
   <base-card class="bg-layout">
+
     <base-dialog
         :show="!!dialog"
         title="PREGHIERA ALLO SPIRITO SANTO"
@@ -16,14 +17,6 @@
         Amen
       </p>
     </base-dialog>
-    <base-dialog
-        :show="!!dialogConnected.show"
-        :title="dialogConnected.title"
-        @close="cleanDialogConnected">
-      <div class="html-raw my-1" v-html="dialogConnected.content"></div>
-      <div class="html-raw my-1" v-html="dialogConnected.extra"></div>
-    </base-dialog>
-
     <div v-if="isLoading">
       <base-spinner></base-spinner>
     </div>
@@ -38,135 +31,117 @@
         </div>
         <h4 class="color3 mt-5 text-center"> {{ currentGospelWay.sacred_texts }}</h4>
       </header>
+
       <hr class="fade-hr my-5 mx-auto">
 
-      <section class="html-raw" @click.right.prevent @keydown="keydown" @copy.prevent @paste.prevent>
-        <div class="row mb-3">
-          <div class="col-12 header-section text-center">
-            <h4 class="evangelist-title"> Dal vangelo secondo <strong>{{ currentGospelWay.evangelist }}</strong></h4>
-            <div class="my-1" v-html="cleanedText"></div>
-          </div>
-        </div>
-        <hr class="fade-hr my-5 mx-auto">
-        <div class="row mb-3">
-          <div class="col-12 header-section text-center">
-            <h4 class="mb-4 color4 fw-bold"> Commento al Vangelo</h4>
-            <div class="my-1" v-html="cleanedComment"></div>
-          </div>
+      <gw-gospel-text
+        :evangelist="currentGospelWay.evangelist"
+        :gospel="currentGospelWay.text"
+        :comment="currentGospelWay.comment"
+        :extra="currentGospelWay.video ? null : currentGospelWay.extra"
+        :clean="true"
+        :show-divider="true"
+      />
 
-          <section v-show="connectedGospelComment.length > 0">
-            <div class="col-12 header-section text-center">
-              <h5 class="my-4 color4 fw-bold"> commenti meno recenti </h5>
-            </div>
-            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
-              <small class="color5 fw-bold clickable"
-                     @click="showDialogConnected('Commento del ' + c.date, c.comment, null)">
-                Commento del {{ c.date }}
-              </small>
-            </div>
-          </section>
+      <gw-embed-video
+          v-show="currentGospelWay.video"
+          title="Video"
+          :url="currentGospelWay.video"
+          :related="videos"
+          :show-divider="true"
+      />
 
-        </div>
-        <hr v-show="cleanedExtra" class="fade-hr my-5 mx-auto">
-        <div v-show="cleanedExtra" class="row mb-3">
-          <div class="col-12 header-section text-center">
-            <h4 class="mb-4 color4 fw-bold"> Extra </h4>
-            <div class="my-1" v-html="cleanedExtra"></div>
-          </div>
+      <gw-connected-text
+          v-show="connected"
+          :relatedData="connected"
+      />
 
-          <section v-show="connectedGospelComment.length > 0">
-            <div class="col-12 header-section text-center">
-              <h5 class="my-4 color4 fw-bold"> extra meno recenti </h5>
-            </div>
-            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">
-              <small class="color5 fw-bold clickable"
-                     @click="showDialogConnected('Commento extra del ' + c.date, null, c.extra)">
-                Extra del {{ c.date }}
-              </small>
-            </div>
-          </section>
+<!--      <section class="html-raw" @click.right.prevent @keydown="keydown" @copy.prevent @paste.prevent>-->
 
-        </div>
+<!--          <section v-show="connectedGospelComment.length > 0">-->
+<!--            <div class="col-12 header-section text-center">-->
+<!--              <h5 class="my-4 color4 fw-bold"> commenti meno recenti </h5>-->
+<!--            </div>-->
+<!--            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">-->
+<!--              <small class="color5 fw-bold clickable"-->
+<!--                     @click="showDialogConnected('Commento del ' + c.date, c.comment, null)">-->
+<!--                Commento del {{ c.date }}-->
+<!--              </small>-->
+<!--            </div>-->
+<!--          </section>-->
 
-      </section>
+<!--        </div>-->
+<!--        <hr v-show="cleanedExtra" class="fade-hr my-5 mx-auto">-->
+<!--        <div v-show="cleanedExtra" class="row mb-3">-->
+<!--          <div class="col-12 header-section text-center">-->
+<!--            <h4 class="mb-4 color4 fw-bold"> Extra </h4>-->
+<!--            <div class="my-1" v-html="cleanedExtra"></div>-->
+<!--          </div>-->
+
+<!--          <section v-show="connectedGospelComment.length > 0">-->
+<!--            <div class="col-12 header-section text-center">-->
+<!--              <h5 class="my-4 color4 fw-bold"> extra meno recenti </h5>-->
+<!--            </div>-->
+<!--            <div v-for="(c,index) in connectedGospelComment" v-bind:key="index" class="col-12 text-center">-->
+<!--              <small class="color5 fw-bold clickable"-->
+<!--                     @click="showDialogConnected('Commento extra del ' + c.date, null, c.extra)">-->
+<!--                Extra del {{ c.date }}-->
+<!--              </small>-->
+<!--            </div>-->
+<!--          </section>-->
+
+<!--        </div>-->
+
+<!--      </section>-->
 
     </section>
   </base-card>
 </template>
 
-<script>
-export default {
-  props: ['date'],
-  created() {
-    this.loadPage(this.date);
-  },
-  data() {
-    return {
-      dialog: false,
-      isLoading: false,
-      dialogConnected: {
-        show: false,
-        title: null,
-        content: null,
-        extra: null
-      }
-    }
-  },
-  computed: {
-    textDate() {
-      return this.$store.getters['page/textDate'];
-    },
-    cleanedExtra() {
-      return this.$store.getters['page/todayGospelWay'].extra.replace(/style="font-family:.*;"/gm,'')
-    },
-    cleanedText() {
-      return this.$store.getters['page/todayGospelWay'].text.replace(/style="font-family:.*;"/gm,'')
-    },
-    cleanedComment() {
-      return this.$store.getters['page/todayGospelWay'].comment.replace(/style="font-family:.*;"/gm,'')
-    },
-    currentGospelWay() {
-      return this.$store.getters['page/todayGospelWay'];
-    },
-    connectedGospelComment() {
-      return this.$store.getters['page/connectedGospelWay'];
-    },
-  },
-  methods: {
-    async loadPage(date) {
-      this.isLoading = true;
-      try {
-        await this.$store.dispatch('page/loadGospelWay', date);
-      } catch (error) {
-        // this.showToast(error.message || 'Errore caricamento pagina!');
-      }
-      this.isLoading = false;
-    },
-    showDialogPreghiera() {
-      this.dialog = true;
-    },
-    cleanDialogPreghiera() {
-      this.dialog = false
-    },
-    showDialogConnected(title, content, extra) {
-      this.dialogConnected.show = true;
-      this.dialogConnected.title = title
-      if (content) {
-        this.dialogConnected.content = content.replace(/style="font-family:.*;"/gm,'')
-      }
-      if (extra) {
-        this.dialogConnected.extra = extra.replace(/style="font-family:.*;"/gm,'')
-      }
-    },
-    cleanDialogConnected() {
-      this.dialogConnected.show = false
-      this.dialogConnected.title = null
-      this.dialogConnected.content = null
-      this.dialogConnected.extra = null
-    }
-  }
+<script setup>
+import GwGospelText from '@/components/GwGospelText.vue'
+import GwEmbedVideo from "@/components/GwEmbedVideo";
+import { ref, defineProps, onMounted, computed} from 'vue'
+import { useStore } from 'vuex'
+import GwConnectedText from "@/components/GwConnectedText";
 
+const props = defineProps({
+  date: String
+})
+
+onMounted(() => {
+  loadPage(props.date)
+})
+
+const store = useStore()
+
+const dialog = ref(false)
+const isLoading = ref(false)
+
+const textDate = computed(() => store.getters['page/textDate']);
+const currentGospelWay = computed(() => store.getters['page/todayGospelWay']);
+const connected = computed(() => store.getters['page/connectedGospelWay']);
+const videos = computed(() => store.getters['page/connectedVideos']);
+console.log(videos)
+
+async function loadPage(date) {
+  isLoading.value = true;
+  try {
+    await store.dispatch('page/loadGospelWay', date);
+  } catch (error) {
+    console.error(error)
+  }
+  isLoading.value = false;
 }
+
+function showDialogPreghiera() {
+  dialog.value = true;
+}
+
+function cleanDialogPreghiera() {
+  dialog.value = false
+}
+
 </script>
 
 <style scoped>
@@ -180,52 +155,10 @@ export default {
   color: #A67D51;
 }
 
-.header-section {
-  font-family: 'Barlow Semi Condensed', sans-serif;
-}
-
 .dialog-text {
   font-size: 1.3rem;
   line-height: 2.2;
   color: #866a2f;
 }
 
-.html-raw:deep(p), .html-raw:deep(em) {
-  font-family: 'Barlow Semi Condensed', sans-serif;
-  color: #281D02FF !important;
-  font-size: 1.2rem;
-  line-height: 1.3;
-}
-.html-raw:deep(strong) {
-  font-family: 'Barlow Semi Condensed', sans-serif;
-  color: #A67D51 !important;
-  font-size: 1.2rem !important;
-}
-
-.html-raw:deep(span) {
-  font-family: 'Barlow Semi Condensed', sans-serif;
-  color: #281D02FF !important;
-  font-size: 1.2rem !important;
-}
-.html-raw:deep(em) {
-  font-family: 'Barlow Semi Condensed', sans-serif;
-  color: #281D02FF !important;
-  font-size: 1.2rem !important;
-}
-
-.html-raw:deep(a) {
-  text-decoration: none !important;
-  color: #A67D51;
-  transition: all .1s;
-}
-
-.html-raw:deep(a):hover {
-  color: #ecb071;
-}
-
-.evangelist-title {
-  color: #6e4f3a;
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
-}
 </style>

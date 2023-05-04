@@ -8,6 +8,7 @@ export default {
         return {
             todayGospelWay: {},
             connectedGospelWay: [],
+            connectedVideos: [],
             saint: null,
             liturgy: null,
             allowedDates: [],

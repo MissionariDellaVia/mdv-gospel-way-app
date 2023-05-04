@@ -1,4 +1,7 @@
 <template>
+  <metainfo>
+    <template v-slot:title="{ content }">{{ content }}</template>
+  </metainfo>
   <div class="row">
     <div class="col my-3 mx-auto">
       <img src="./assets/logo.png" class="logo-img clickable" alt="logo-img" @click="pushRoute('/')"/>
@@ -11,14 +14,24 @@
   </router-view>
 </template>
 
-<script>
-export default {
-  methods: {
-    pushRoute(route) {
-      this.$router.push(route);
-    }
-  }
+<script setup>
+import {useMeta} from 'vue-meta'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+function pushRoute(route) {
+  router.push(route);
 }
+
+useMeta({
+  title: 'Missionari della Via',
+  htmlAttrs: {
+    lang: 'it',
+    amp: true
+  }
+})
+
 </script>
 
 <style>
@@ -73,12 +86,13 @@ hr {
   cursor: pointer;
   transition: all .1s;
 }
+
 .clickable:hover {
   filter: brightness(120%);
   transform: scale(0.98);
 }
 
-.clickable:focus  {
+.clickable:focus {
   filter: brightness(150%);
   transform: scale(0.93);
 }

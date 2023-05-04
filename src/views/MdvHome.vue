@@ -1,9 +1,22 @@
 <template>
 
       <base-card v-touch:swipe="handleSwipe">
+
         <div v-if="isLoading">
           <base-spinner></base-spinner>
         </div>
+
+        <!--
+        <date-header
+          :title="textDate"
+          :max-date="allowedDates[0]"
+          :heading="currentGospelWay.sacred_texts"
+          @substract="handleDateChange(false,true,null)"
+          @plus="handleDateChange(true,false,null)"
+          @full="handleDateChange(false,false,currentDate)"
+        />
+
+        -->
         <header class="row mt-5 mb-3">
           <div class="col-12 header-section text-center">
             <div class="d-flex justify-content-center align-items-center">
@@ -19,6 +32,7 @@
                 :max-date="allowedDates[0]"
                 hide-offset-dates
                 auto-apply
+                calendar-cell-class-name="dp-custom-cell"
                 @update:model-value="handleDateChange(false,false,currentDate)">
               <template #trigger>
                 <i class="fa-regular fa-calendar-days home-icon"></i>
@@ -63,6 +77,11 @@
 
 <script>
 export default {
+  metaInfo() {
+    return {
+      title: 'Missionari della Via Home',
+    }
+  },
   created() {
     this.loadHomeInfo()
     this.loadAllowedDates()
@@ -131,7 +150,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .home-icon {
   font-size: 1.5rem;
   color: #9d7a5b;
@@ -156,6 +175,9 @@ export default {
 .bg-2 {
   background-color: #B2A348 !important;
   color: white;
+}
+.dp-custom-cell {
+  border-radius: 90% !important;
 }
 a {
   text-decoration: none !important;

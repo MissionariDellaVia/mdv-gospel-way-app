@@ -5,6 +5,8 @@ import router from '@/router';
 import store from '@/store/index.js';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import Vue3TouchEvents from "vue3-touch-events";
+import { createMetaManager, plugin as metaPlugin } from 'vue-meta'
+
 
 import '@vuepic/vue-datepicker/dist/main.css'
 import 'vue3-carousel/dist/carousel.css';
@@ -21,6 +23,15 @@ const app = createApp(App)
 app.use(router);
 app.use(store);
 app.use(Vue3TouchEvents);
+app.use(createMetaManager());
+app.use(metaPlugin, {
+    keyName: 'metaInfo',
+    attribute: 'data-vue-meta',
+    ssrAttribute: 'data-vue-meta-server-rendered',
+    tagIDKeyName: 'vmid',
+    refreshOnceOnNavigation: true
+}); // optional, only needed for OptionsAPI (see below)
+
 
 app.config.globalProperties.$util = utilityFunction;
 

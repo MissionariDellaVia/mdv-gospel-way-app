@@ -5,6 +5,9 @@ export default {
     setConnectedGospelWay(state, payload) {
         state.connectedGospelWay = payload
     },
+    setConnectedVideos(state, payload) {
+        state.connectedVideos = payload
+    },
     setHomeInfo(state, payload) {
         state.saint = payload.saint
         state.liturgy = payload.liturgy

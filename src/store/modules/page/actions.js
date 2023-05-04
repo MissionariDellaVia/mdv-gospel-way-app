@@ -28,6 +28,7 @@ export default {
         }
         context.commit('setTodayGospelWay', responseData.today);
         context.commit('setConnectedGospelWay', responseData.connected);
+        context.commit('setConnectedVideos', responseData.videos);
     },
     async loadAllowedDates(context) {
         const url = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/dates`;

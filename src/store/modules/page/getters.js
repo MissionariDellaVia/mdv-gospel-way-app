@@ -5,6 +5,9 @@ export default {
     connectedGospelWay(state) {
         return state.connectedGospelWay;
     },
+    connectedVideos(state) {
+        return state.connectedVideos;
+    },
     saint(state) {
         return state.saint;
     },
