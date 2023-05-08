@@ -64,10 +64,12 @@
         <section class="row">
           <p class="intro color1">
             Caro fratello o sorella <strong>benvenuto/a!</strong><br><br>
-            Questo sito contiene il diario spirituale della Comunità sul Vangelo del giorno. L'abbiamo realizzata perchè potesse servire anche a te!
+            Questo sito contiene il diario spirituale della Comunità sul Vangelo del giorno. L'abbiamo realizzata perchè potesse servire anche a te!<br>
             Questo commento è un aiuto per meditare e costudire almeno una parola del Vangelo, perchè possa portare frutto nel cammino quotidiano alla sequela di Gesù e per vivere il carisma della comunità più intensamente!<br><br>
-            Se volessi il libretto cartaceo trimestrale<br>
-            (da poter sottolineare e dove poter prendere appunti)
+            Se volessi scaricare l'app gratuita, cerca su
+            <a href="https://play.google.com/store/apps/details?id=net.missionaridellavia.gospelway&hl=it&gl=US">PlayStore</a> e su
+            <a href="https://apps.apple.com/ca/app/missionari-della-via/id1602977439">AppStore</a> "Missionari della Via".<br>
+            Se volessi il libretto cartaceo trimestrale (da poter sottolineare e dove poter prendere appunti)
             puoi richiederlo <a href="mailto:missioanridellab">scrivendoci</a>
           </p>
         </section>
