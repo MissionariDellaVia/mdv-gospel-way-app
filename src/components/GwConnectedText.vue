@@ -14,7 +14,7 @@
       </div>
       <div v-for="(c,index) in relatedData" v-bind:key="index" class="col-12 text-center">
         <p class="clickable conn-p"
-               @click="showDialogConnected('Commento del ' + c.date, c.comment, c.extra)">
+               @click="showDialogConnected(c.date, c.comment, c.extra)">
           Commento del {{ getTextDate(c.date) }}
         </p>
       </div>
