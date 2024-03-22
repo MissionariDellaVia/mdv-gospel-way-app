@@ -13,27 +13,26 @@
         Faustino, fra Umile e suor Chiara. Con l’entusiasmo e la semplicità di voler vivere il Vangelo, si imbattono in
         una prima esperienza di vita evangelica, sentendo che lo Spirito Santo faceva crescere in loro un forte
         desiderio di missionarietà contemplativa, un grande amore per la Verità e per una radicale povertà. Dopo essersi
-        confrontati con l’allora Vescovo di Lamezia Terme, che seguiva questo loro desiderio, mons. Luigi A. Cantafora,
-        offrirono un pellegrinaggio per comprendere meglio la loro vocazione, percorrendo a piedi e senza nulla – come i
-        primi discepoli del Signore – vari santuari mariani dell’Europa. Ivi, per grazia di Dio, sentirono forte nel
-        cuore il richiamo missionario a donare la loro vita per testimoniare che Dio si è proclamato Verità, proprio
-        quella verità che il cuore dell’uomo cerca incessantemente: la verità dell’Amore. Iniziarono così, in una Chiesa
-        semi-abbandonata e in un terreno deserto alla periferia di Lamezia Terme, a vivere una vita semplice, avendo
-        come unica regola il Vangelo, mettendosi sotto la protezione della Madonna della Via fiore del Carmelo e di San
-        Giuseppe suo sposo, patroni e protettori della loro vita di missionari poveri e itineranti. Il percorso
-        intrapreso proseguì non solo con la loro consacrazione religiosa e il loro semplice abito religioso color della
-        terra (per ricordare l’umiltà di Dio che spogliò sé stesso prendendo la nostra natura umana), ma ricevettero
-        anche l’approvazione da parte della Chiesa; inoltre i due fratelli divennero sacerdoti.
+        confrontati con il Vescovo di Lamezia Terme di quel tempo mons. Luigi A. Cantafora,
+        che seguiva questa loro ispirazione, offrirono un pellegrinaggio per comprendere meglio la loro vocazione,
+        percorrendo a piedi e senza nulla – come i primi discepoli del Signore – vari santuari mariani dell’Europa.
+        Ivi, per grazia di Dio, sentirono forte nel cuore il richiamo missionario a donare la loro vita per testimoniare che
+        Dio si è proclamato Verità, proprio quella verità che il cuore dell’uomo cerca incessantemente: la verità dell’Amore.
+        Iniziarono così, in una Chiesa semi-abbandonata e in un terreno deserto alla periferia di Lamezia Terme,
+        a vivere una vita semplice, avendo come unica regola il Vangelo,
+        mettendosi sotto la protezione della Madonna della Via fiore del Carmelo e di San Giuseppe suo sposo,
+        patroni e protettori della loro vita di missionari poveri e itineranti.
+        Il percorso intrapreso proseguì non solo con la loro consacrazione religiosa e il loro semplice abito religioso
+        color della terra (per ricordare l’umiltà di Dio che spogliò sé stesso prendendo la nostra natura umana) ma ricevettero
+        anche l’approvazione da parte della Chiesa e, inoltre, i due fratelli divennero sacerdoti.
       </p>
       <p>
-        Da qui sono nate due piccole fraternità, quella dei frati e quella delle suore, divenute un Istituto religioso
-        che, ispirandosi alla vita della prima comunità cristiana (quelli della Via – cfr At 9,2) vivono la grazia della
-        consacrazione religiosa come missionari apostolici, evangelizzatori poveri e itineranti e condividono dei
-        momenti di preghiera e di missione. Gli Istituti non sono misti ma cooperano nell’apostolato. Con una vita
-        all’insegna della semplicità, senza circolo di denaro e totalmente dedita alla Provvidenza, i fratelli e le
-        sorelle, uniti dalla preghiera, fonte di ogni azione, seguono il Signore in questo stile di vita: operosi nel
-        lavorare i frutti della terra che il Signore ha donato, dediti ad una formazione seria e fondata, amanti della
-        Verità da testimoniare, andando incontro a tutti, specialmente agli ultimi.
+        Da qui sono nati ii frati e le suore della Via che, ispirandosi alla vita della prima comunità cristiana
+        ("quelli della Via" - At 9,2), vivono la grazia della consacrazione religiosa come missionari apostolici,
+        evangelizzatori poveri e itineranti. La Comunità non è mista ma frati e suore condividono dei momenti di preghiera e di missione.
+        Con una vita all’insegna della semplicità, senza circolo di denaro e totalmente dedita alla Provvidenza, i fratelli e le sorelle, uniti dalla preghiera, fonte di ogni azione,
+        seguono il Signore in questo stile di vita: operosi nel lavorare i frutti della terra che il Signore ha donato, dediti ad una formazione seria e fondata, amanti della Verità da testimoniare,
+        andando incontro a tutti, specialmente agli ultimi.
       </p>
     </section>
     <section class="my-4">
