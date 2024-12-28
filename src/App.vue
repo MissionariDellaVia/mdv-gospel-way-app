@@ -4,7 +4,7 @@
   </metainfo>
   <div class="row">
     <div class="col my-3 mx-auto">
-      <img src="./assets/logo.png" class="logo-img clickable" alt="logo-img" @click="pushRoute('/')"/>
+      <img src="./assets/logo-mdv.png" class="logo-img clickable" alt="logo-img" @click="pushRoute('/')"/>
     </div>
   </div>
   <router-view v-slot="{ Component }">
@@ -45,7 +45,7 @@ useMeta({
 .color6 {color: #908286;}
 
 body {
-  background-color: #281D02FF !important;
+  background-color: #6E4F3A !important;
 }
 
 #app {
@@ -58,9 +58,8 @@ body {
 }
 
 .logo-img {
-  width: 4rem;
+  width: 10rem;
   padding-top: 1rem;
-  padding-bottom: 1rem;
 }
 
 .max-height {
