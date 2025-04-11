@@ -15,8 +15,7 @@
   </router-view>
 
   <!-- PWA Install Banners -->
-  <InstallBanner />
-  <IOSInstallGuide />
+  <UniversalInstallGuide />
 
   <!-- App update notification -->
   <div v-if="updateAvailable" class="update-notification">
@@ -31,9 +30,8 @@
 import {ref, onMounted, onBeforeUnmount} from 'vue'
 import {useMeta} from 'vue-meta'
 import {useRouter} from 'vue-router'
-import InstallBanner from './components/InstallBanner.vue'
-import IOSInstallGuide from './components/IOSInstallGuide.vue'
 import NetworkStatus from './components/NetworkStatus.vue'
+import UniversalInstallGuide from "@/components/UniversalInstallGuide.vue";
 
 const router = useRouter()
 const updateAvailable = ref(false)
