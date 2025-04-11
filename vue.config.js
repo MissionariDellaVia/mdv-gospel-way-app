@@ -15,37 +15,12 @@ module.exports = defineConfig({
       description: "L'app ufficiale de La Via del Vangelo - Missionari Della Via",
       display: "standalone",
       orientation: "portrait",
-      lang: "it",
-      categories: ["lifestyle", "education", "books"]
+      lang: "it"
     },
-    workboxPluginMode: 'GenerateSW',
+    workboxPluginMode: 'InjectManifest',
     workboxOptions: {
-      skipWaiting: true,
-      clientsClaim: true,
-      runtimeCaching: [
-        {
-          urlPattern: new RegExp('^http://www.missionaridellavia.net'),
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'api-cache',
-            expiration: {
-              maxEntries: 100,
-              maxAgeSeconds: 60 * 60 * 24 // 1 day
-            }
-          }
-        },
-        {
-          urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'images',
-            expiration: {
-              maxEntries: 60,
-              maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
-            }
-          }
-        }
-      ]
+      swSrc: 'src/service-worker.js',
+      swDest: 'service-worker.js',
     }
   }
 })

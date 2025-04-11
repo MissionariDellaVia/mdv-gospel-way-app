@@ -33,7 +33,11 @@
     "eslint-plugin-vue": "^8.0.3",
     "execa": "latest",
     "sass": "^1.62.0",
-    "sass-loader": "^13.2.2"
+    "sass-loader": "^13.2.2",
+    "workbox-expiration": "^7.3.0",
+    "workbox-precaching": "^7.3.0",
+    "workbox-routing": "^7.3.0",
+    "workbox-strategies": "^7.3.0"
   },
   "eslintConfig": {
     "root": true,

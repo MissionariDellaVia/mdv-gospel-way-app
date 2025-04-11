@@ -2,6 +2,7 @@
   <metainfo>
     <template v-slot:title="{ content }">{{ content }}</template>
   </metainfo>
+  <NetworkStatus />
   <div class="row">
     <div class="col my-3 mx-auto">
       <img src="./assets/logo-mdv.png" class="logo-img clickable" alt="logo-img" @click="pushRoute('/')"/>
@@ -30,6 +31,7 @@ import {useMeta} from 'vue-meta'
 import {useRouter} from 'vue-router'
 import InstallBanner from './components/InstallBanner.vue'
 import IOSInstallGuide from './components/IOSInstallGuide.vue'
+import NetworkStatus from './components/NetworkStatus.vue'
 
 const router = useRouter()
 const updateAvailable = ref(false)
