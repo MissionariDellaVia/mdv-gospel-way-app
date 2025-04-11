@@ -23,6 +23,8 @@
     Nuova versione disponibile!
     <button @click="refreshApp" class="update-button">Aggiorna</button>
   </div>
+
+  <!-- In your App.vue template, add this before closing </template> tag -->
 </template>
 
 <script setup>
