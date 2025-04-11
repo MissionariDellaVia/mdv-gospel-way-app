@@ -3,8 +3,9 @@
 // Add this at the top of your file
 function getProxiedUrl(url) {
     // Only add proxy in production mode and for HTTP URLs
-    if (process.env.NODE_ENV === 'production' && url.startsWith('http:')) {
-        // Use a reliable CORS proxy (several options available)
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    if (process.env.NODE_ENV === 'production') {
+        console.log("Using proxied API base URL");
         return `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
     }
     return url;
