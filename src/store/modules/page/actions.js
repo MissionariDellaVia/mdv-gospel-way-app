@@ -1,25 +1,12 @@
 // noinspection JSUnresolvedVariable
-
-// Add this at the top of your file
-function getProxiedUrl(url) {
-    // Only add proxy in production mode and for HTTP URLs
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-    if (process.env.NODE_ENV === 'production') {
-        console.log("Using proxied API base URL");
-        return `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-    }
-    return url;
-}
-
 export default {
     async loadHomeInfo(context) {
         const date = context.getters.currentDate;
         const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/info/${date}`;
-        const url = getProxiedUrl(baseUrl);
-        console.debug("load home info -> " + url);
+        console.debug("load home info -> " + baseUrl);
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(baseUrl);
             const responseData = await response.json();
 
             if (!response.ok) {
@@ -52,11 +39,10 @@ export default {
 
     async loadGospelWay(context, date) {
         const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/gospel/${date}`;
-        const url = getProxiedUrl(baseUrl);
-        console.debug("load gospel -> " + url);
+        console.debug("load gospel -> " + baseUrl);
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(baseUrl);
             const responseData = await response.json();
 
             if (!response.ok) {
@@ -90,11 +76,10 @@ export default {
 
     async loadAllowedDates(context) {
         const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/dates`;
-        const url = getProxiedUrl(baseUrl);
-        console.debug("load allowed dates -> " + url);
+        console.debug("load allowed dates -> " + baseUrl);
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(baseUrl);
             const responseData = await response.json();
 
             if (!response.ok) {
