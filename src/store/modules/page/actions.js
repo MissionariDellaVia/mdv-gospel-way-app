@@ -1,6 +1,7 @@
 // noinspection JSUnresolvedVariable
 export default {
     async loadHomeInfo(context) {
+        console.info("Environment base URL: " + process.env.VUE_APP_MDV_BASE_URL);
         const date = context.getters.currentDate;
         const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/info/${date}`;
         console.debug("load home info -> " + baseUrl);
