@@ -49,13 +49,12 @@
       </div>
 
       <h4 class="mt-5 color4"> Email Frati </h4>
-      <a href="mailto:missionaridellavia.lamezia@gmail.com">missionaridellavia.lamezia@gmail.com</a><br>
+      <a href="mailto:missionaridellavia.cassano@gmail.com">missionaridellavia.cassano@gmail.com</a><br>
       <a href="mailto:missionaridellavia.napoli@gmail.com">missionaridellavia.napoli@gmail.com</a><br>
-      <a href="mailto:missionaridellavia.vibo@gmail.com">missionaridellavia.vibo@gmail.com</a>
 
       <h4 class="mt-5 color4"> Email Suore </h4>
-      <a href="mailto:missionariedellavia.lamezia@gmail.com">missionaridellavia.lamezia@gmail.com</a><br>
-      <a href="mailto:missionariedellavia.napoli@gmail.com">missionaridellavia.napoli@gmail.com</a><br>
+      <a href="mailto:missionariedellavia.cassano@gmail.com">missionariedellavia.cassano@gmail.com</a><br>
+      <a href="mailto:missionariedellavia.napoli@gmail.com">missionariedellavia.napoli@gmail.com</a><br>
 
       <div class="row my-5 text-center">
         <ul class="list-inline social-network social-circle">
