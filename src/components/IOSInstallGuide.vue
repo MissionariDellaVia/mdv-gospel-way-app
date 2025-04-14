@@ -56,7 +56,7 @@ export default {
       // Show after a delay to not overwhelm users immediately
       setTimeout(() => {
         this.showIOSGuide = true;
-      }, 5000);
+      }, 1000);
     }
   },
   methods: {

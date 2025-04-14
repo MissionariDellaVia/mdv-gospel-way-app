@@ -47,7 +47,7 @@ export default {
       // Show our custom banner after a delay
       setTimeout(() => {
         this.showInstallBanner = true;
-      }, 3000);
+      }, 1000);
     });
   },
   methods: {
