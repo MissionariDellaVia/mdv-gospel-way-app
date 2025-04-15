@@ -7,7 +7,7 @@ import VueDatePicker from '@vuepic/vue-datepicker';
 import Vue3TouchEvents from "vue3-touch-events";
 import { createMetaManager, plugin as metaPlugin } from 'vue-meta'
 
-
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@vuepic/vue-datepicker/dist/main.css'
 import 'vue3-carousel/dist/carousel.css';
 import "bootstrap/dist/css/bootstrap.min.css";

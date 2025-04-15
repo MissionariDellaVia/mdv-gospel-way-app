@@ -6,6 +6,15 @@
     <div class="guide-content">
       <h3>{{ guideTitle }}</h3>
 
+      <!-- Auto Install Button prominente -->
+      <button
+          v-if="canUseInstallPrompt"
+          @click="tryAutoInstall"
+          class="install-now-button primary-action"
+      >
+        Installa Ora
+      </button>
+
       <!-- iOS Instructions -->
       <div v-if="deviceType === 'ios'" class="steps">
         <div class="step">
@@ -29,51 +38,40 @@
         </div>
       </div>
 
-      <!-- Android Chrome Instructions -->
-      <div v-else-if="deviceType === 'android-chrome'" class="steps">
-        <div class="step">
-          <div class="step-number">1</div>
-          <div class="step-text">Tocca il menu
-            <span class="android-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" stroke="#A67D51" stroke-width="2"/>
-                <path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" stroke="#A67D51" stroke-width="2"/>
-                <path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" stroke="#A67D51" stroke-width="2"/>
-              </svg>
-            </span> (tre punti) in alto a destra
-          </div>
+      <!-- Android Instructions (unified) -->
+      <div v-else-if="deviceType.startsWith('android')" class="steps">
+        <div v-if="!canUseInstallPrompt" class="no-prompt-note">
+          Per installare automaticamente, tocca <strong>"Installa Ora"</strong> sopra.
+          Se non funziona, segui questi passaggi:
         </div>
-        <div class="step">
-          <div class="step-number">2</div>
-          <div class="step-text">Seleziona <strong>"Installa app"</strong> o <strong>"Aggiungi a schermata Home"</strong></div>
-        </div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <div class="step-text">Tocca <strong>"Installa"</strong> nella finestra di dialogo</div>
-        </div>
-      </div>
 
-      <!-- Android Samsung Internet Instructions -->
-      <div v-else-if="deviceType === 'android-samsung'" class="steps">
         <div class="step">
           <div class="step-number">1</div>
-          <div class="step-text">Tocca il menu
-            <span class="android-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" stroke="#A67D51" stroke-width="2"/>
-                <path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" stroke="#A67D51" stroke-width="2"/>
-                <path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" stroke="#A67D51" stroke-width="2"/>
-              </svg>
-            </span> (tre punti) in basso a destra
+          <div class="step-text">
+            Tocca il menu <strong>⋮</strong> (tre punti)
+            <span v-if="deviceType === 'android-samsung'">in basso</span>
+            <span v-else>in alto</span>
+            a destra
           </div>
         </div>
         <div class="step">
           <div class="step-number">2</div>
-          <div class="step-text">Seleziona <strong>"Aggiungi pagina a"</strong></div>
+          <div class="step-text">
+            Cerca una delle seguenti opzioni:
+            <ul>
+              <li><strong>Installa app</strong></li>
+              <li><strong>Aggiungi a schermata Home</strong></li>
+              <li><strong>Installa La Via del Vangelo</strong></li>
+            </ul>
+          </div>
         </div>
-        <div class="step">
+
+        <!-- Sony-specific instructions -->
+        <div v-if="isSonyDevice" class="step sony-specific">
           <div class="step-number">3</div>
-          <div class="step-text">Tocca <strong>"Schermata Home"</strong></div>
+          <div class="step-text">
+            Su dispositivi Sony: tocca <strong>Impostazioni sito</strong> e poi <strong>Aggiungi a schermata Home</strong>
+          </div>
         </div>
       </div>
 
@@ -87,19 +85,7 @@
           <div class="step-number">2</div>
           <div class="step-text">Cerca un'opzione come <strong>"Installa app"</strong> o <strong>"Aggiungi a schermata Home"</strong></div>
         </div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <div class="step-text">Segui le istruzioni per completare l'installazione</div>
-        </div>
       </div>
-
-      <button
-          @click="tryAutoInstall"
-          v-if="canUseInstallPrompt"
-          class="install-now-button"
-      >
-        Installa Ora
-      </button>
     </div>
   </div>
 </template>
@@ -112,7 +98,8 @@ export default {
       showGuide: false,
       deviceType: 'unknown',
       deferredPrompt: null,
-      canUseInstallPrompt: false
+      canUseInstallPrompt: false,
+      isSonyDevice: false
     }
   },
   computed: {
@@ -128,41 +115,15 @@ export default {
   },
   mounted() {
     this.detectDevice();
+    this.checkIfAlreadyInstalled();
+    this.setupInstallListeners();
 
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator.standalone === true)) {
-      console.log("App is already installed, not showing install guide");
-      return;
-    }
-
-    // Check if user previously dismissed the guide
-    const dismissed = localStorage.getItem('installGuideDismissed');
-    if (dismissed) {
-      const dismissalTime = parseInt(dismissed);
-      const now = Date.now();
-      const daysSinceDismissal = (now - dismissalTime) / (1000 * 60 * 60 * 24);
-
-      // If dismissed less than 7 days ago, don't show again
-      if (daysSinceDismissal < 7) {
-        console.log("Install guide was dismissed less than 7 days ago");
-        return;
-      }
-    }
-
-    // For Android/Chrome, listen for install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the default browser prompt
-      e.preventDefault();
-      // Store the event for later use
-      this.deferredPrompt = e;
-      this.canUseInstallPrompt = true;
-    });
-
-    // Show the guide quickly after the page loads
+    // Show guide after verification
     setTimeout(() => {
-      this.showGuide = true;
-    }, 1000); // Just 1 second delay to allow the main content to load first
+      if (!this.isAppInstalled()) {
+        this.showGuide = true;
+      }
+    }, 1500);
   },
   methods: {
     detectDevice() {
@@ -176,8 +137,11 @@ export default {
 
       // Android detection
       if (/android/.test(ua)) {
-        // Check for Samsung Internet Browser
-        if (/samsungbrowser/.test(ua)) {
+        // Sony detection
+        if (/sony/.test(ua) || /sonyericsson/.test(ua) || /xperia/.test(ua)) {
+          this.deviceType = 'android-sony';
+          this.isSonyDevice = true;
+        } else if (/samsungbrowser/.test(ua)) {
           this.deviceType = 'android-samsung';
         } else if (/chrome/.test(ua)) {
           this.deviceType = 'android-chrome';
@@ -187,37 +151,84 @@ export default {
         return;
       }
 
-      // Default fallback
       this.deviceType = 'unknown';
     },
+
+    isAppInstalled() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true;
+    },
+
+    checkIfAlreadyInstalled() {
+      if (this.isAppInstalled()) {
+        console.log("App is already installed");
+        return true;
+      }
+
+      // Check if user previously dismissed
+      const dismissed = localStorage.getItem('installGuideDismissed');
+      if (dismissed) {
+        const dismissalTime = parseInt(dismissed);
+        const daysSinceDismissal = (Date.now() - dismissalTime) / (1000 * 60 * 60 * 24);
+        if (daysSinceDismissal < 7) {
+          console.log("Install guide dismissed recently");
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    setupInstallListeners() {
+      // For Chrome and compatible browsers
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        this.deferredPrompt = e;
+        this.canUseInstallPrompt = true;
+
+        // Backup auto-install prompt
+        // If not shown within 3 seconds after page load, try auto-installation
+        if (this.deviceType.startsWith('android')) {
+          setTimeout(() => {
+            if (this.deferredPrompt && !this.isAppInstalled()) {
+              this.tryAutoInstall();
+            }
+          }, 3000);
+        }
+      });
+
+      // Track successful installation
+      window.addEventListener('appinstalled', () => {
+        console.log('Installazione completata!');
+        this.showGuide = false;
+        localStorage.setItem('appInstalled', 'true');
+      });
+    },
+
     closeGuide() {
       this.showGuide = false;
       localStorage.setItem('installGuideDismissed', Date.now().toString());
     },
+
     async tryAutoInstall() {
       if (!this.deferredPrompt) {
-        console.warn("No installation prompt available");
+        console.warn("Nessun prompt di installazione disponibile");
         return;
       }
 
       try {
-        // Show the browser's install prompt
         this.deferredPrompt.prompt();
-
-        // Wait for the user to respond to the prompt
         const { outcome } = await this.deferredPrompt.userChoice;
-        console.log(`User response to the install prompt: ${outcome}`);
+        console.log(`Risposta all'installazione: ${outcome}`);
 
-        // If the user accepted, hide our guide
         if (outcome === 'accepted') {
           this.closeGuide();
         }
 
-        // Clear the saved prompt
         this.deferredPrompt = null;
         this.canUseInstallPrompt = false;
       } catch (error) {
-        console.error("Error during installation attempt:", error);
+        console.error("Errore durante l'installazione:", error);
       }
     }
   }
@@ -252,6 +263,25 @@ export default {
   }
 }
 
+.primary-action {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(166, 125, 81, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(166, 125, 81, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(166, 125, 81, 0);
+  }
+}
+
 .close-guide-button {
   position: absolute;
   top: 10px;
@@ -281,11 +311,26 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  margin-top: 15px;
+}
+
+.no-prompt-note {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-left: 3px solid #A67D51;
+  color: #d3b282;
+  font-size: 14px;
 }
 
 .step {
   display: flex;
   align-items: flex-start;
+}
+
+.sony-specific {
+  background-color: rgba(166, 125, 81, 0.1);
+  padding: 10px;
+  border-radius: 5px;
 }
 
 .step-number {
@@ -313,10 +358,14 @@ export default {
   color: #d3b282;
 }
 
-.ios-share-icon, .android-menu-icon {
-  display: inline-block;
-  margin: 0 5px;
-  vertical-align: middle;
+.step-text ul {
+  width: 100%;
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+.step-text li {
+  margin-bottom: 3px;
 }
 
 strong {
@@ -328,13 +377,16 @@ strong {
   background-color: #A67D51;
   color: #281D02FF;
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
+  padding: 12px 20px;
+  border-radius: 6px;
   font-weight: bold;
-  margin: 20px auto 0;
+  margin: 0 auto 20px;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 16px;
+  font-size: 18px;
+  width: 80%;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .install-now-button:hover {
@@ -346,7 +398,6 @@ strong {
   transform: scale(0.98);
 }
 
-/* Mobile optimizations */
 @media (max-width: 480px) {
   .install-guide {
     width: 95%;
