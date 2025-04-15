@@ -159,7 +159,7 @@ export default {
 }
 
 .tutorial-content {
-  background-color: #472b21;
+  background-color: #58412b;
   border: 2px solid #A67D51;
   border-radius: 15px;
   padding: 25px 20px;

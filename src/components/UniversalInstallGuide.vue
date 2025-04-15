@@ -243,7 +243,7 @@ export default {
   transform: translateX(-50%);
   width: 90%;
   max-width: 350px;
-  background-color: #472b21;
+  background-color: #4d3823;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   padding: 20px;
