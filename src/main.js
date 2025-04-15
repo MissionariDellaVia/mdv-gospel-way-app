@@ -18,6 +18,7 @@ import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import ScrollToTopButton from '@/components/ui/ScrollToTopButton.vue'
 import './registerServiceWorker'
 
 const app = createApp(App)
@@ -41,5 +42,6 @@ app.component('base-button', BaseButton);
 app.component('base-dialog', BaseDialog);
 app.component('base-spinner', BaseSpinner);
 app.component('vue-date-picker', VueDatePicker);
+app.component('ScrollToTopButton', ScrollToTopButton)
 
 app.mount('#app');

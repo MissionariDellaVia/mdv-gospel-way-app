@@ -55,8 +55,10 @@
           v-show="connected"
           :relatedData="connected"
       />
-
     </section>
+
+    <!-- Add the ScrollToTopButton component -->
+    <ScrollToTopButton />
   </base-card>
 </template>
 
@@ -66,6 +68,7 @@ import GwEmbedVideo from "@/components/GwEmbedVideo";
 import { ref, defineProps, onMounted, computed} from 'vue'
 import { useStore } from 'vuex'
 import GwConnectedText from "@/components/GwConnectedText";
+import ScrollToTopButton from "@/components/ui/ScrollToTopButton.vue";
 
 const props = defineProps({
   date: String
