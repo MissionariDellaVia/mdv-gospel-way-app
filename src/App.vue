@@ -24,70 +24,26 @@
 
   <!-- App update notification -->
   <UpdateNotification />
-
-  <!-- Version display (for debugging) -->
-  <VersionDisplay v-if="showVersionDisplay" />
-
-
-  <!-- In your App.vue template, add this before closing </template> tag -->
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
-import {useMeta} from 'vue-meta'
-import {useRouter} from 'vue-router'
+import { useRouter } from 'vue-router'
+import { useMeta } from 'vue-meta'
 import NetworkStatus from './components/NetworkStatus.vue'
-import SwipeHint from "@/components/SwipeHint.vue";
-import IOSInstallGuide from "@/components/IOSInstallGuide.vue";
-import InstallBanner from "@/components/InstallBanner.vue";
-import UpdateNotification from "@/components/UpdateNotification.vue";
-import VersionDisplay from "@/components/VersionDisplay.vue";
+import SwipeHint from './components/SwipeHint.vue'
+import InstallBanner from './components/InstallBanner.vue'
+import IOSInstallGuide from './components/IOSInstallGuide.vue'
+import UpdateNotification from './components/UpdateNotification.vue'
+import './registerServiceWorker'
 
 const router = useRouter()
-const showVersionDisplay = ref(false)
-
 function pushRoute(route) {
   router.push(route)
 }
 
-onMounted(() => {
-  const keys = {
-    v: false,
-    d: false,
-    t: false
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'v') keys.v = true
-    if (e.key === 'd') keys.d = true
-    if (e.key === 't') keys.t = true
-
-    if (keys.v && keys.d && keys.t) {
-      showVersionDisplay.value = !showVersionDisplay.value
-    }
-  })
-
-  document.addEventListener('keyup', (e) => {
-    if (e.key === 'v') keys.v = false
-    if (e.key === 'd') keys.d = false
-    if (e.key === 't') keys.t = false
-  })
-})
-
 useMeta({
   title: 'La Via del Vangelo',
-  htmlAttrs: {
-    lang: 'it',
-    amp: true
-  }
-})
-
-useMeta({
-  title: 'La Via del Vangelo',
-  htmlAttrs: {
-    lang: 'it',
-    amp: true
-  }
+  htmlAttrs: { lang: 'it', amp: true }
 })
 </script>
 
