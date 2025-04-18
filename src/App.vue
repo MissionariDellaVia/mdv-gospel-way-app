@@ -1,49 +1,59 @@
 <template>
-  <metainfo>
-    <template v-slot:title="{ content }">{{ content }}</template>
-  </metainfo>
+  <PullToRefresh @refresh="onPullRefresh">
 
-  <NetworkStatus />
-  <div class="row">
-    <div class="col my-3 mx-auto">
-      <img src="./assets/logo-mdv.png" class="logo-img clickable" alt="logo-img" @click="pushRoute('/')"/>
+    <metainfo>
+      <template v-slot:title="{ content }">{{ content }}</template>
+    </metainfo>
+
+    <NetworkStatus/>
+    <div class="row">
+      <div class="col my-3 mx-auto">
+        <img src="./assets/logo-mdv.png" class="logo-img clickable" alt="logo-img" @click="pushRoute('/')"/>
+      </div>
     </div>
-  </div>
-  <router-view v-slot="{ Component }">
-    <transition name="scale" mode="out-in">
-      <component :is="Component"/>
-    </transition>
-  </router-view>
+    <router-view v-slot="{ Component }">
+      <transition name="scale" mode="out-in">
+        <component :is="Component"/>
+      </transition>
+    </router-view>
 
-  <!-- Swipe hint should come after router-view -->
-  <SwipeHint />
+    <!-- Swipe hint should come after router-view -->
+    <SwipeHint/>
 
-  <!-- PWA Install Banners -->
-  <InstallBanner />
-  <IOSInstallGuide />
+    <!-- PWA Install Banners -->
+    <InstallBanner/>
+    <IOSInstallGuide/>
 
-  <!-- App update notification -->
-  <UpdateNotification />
+    <!-- App update notification -->
+    <UpdateNotification/>
+  </PullToRefresh>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { useMeta } from 'vue-meta'
+import {useRouter} from 'vue-router'
+import {useMeta} from 'vue-meta'
 import NetworkStatus from './components/NetworkStatus.vue'
 import SwipeHint from './components/SwipeHint.vue'
 import InstallBanner from './components/InstallBanner.vue'
 import IOSInstallGuide from './components/IOSInstallGuide.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
 import './registerServiceWorker'
+import PullToRefresh from "@/components/PullToRefresh.vue";
 
 const router = useRouter()
+
 function pushRoute(route) {
   router.push(route)
 }
 
+function onPullRefresh() {
+  document.dispatchEvent(new CustomEvent('swUpdatedCheck'))
+  window.location.reload()
+}
+
 useMeta({
   title: 'La Via del Vangelo',
-  htmlAttrs: { lang: 'it', amp: true }
+  htmlAttrs: {lang: 'it', amp: true}
 })
 </script>
 
