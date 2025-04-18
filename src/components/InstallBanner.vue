@@ -58,7 +58,7 @@
           <div class="guide-step">
             <div class="step-number">1</div>
             <div class="step-content">
-              <p>Quando appare il banner di Chrome, tocca <strong>"Installa"</strong></p>
+              <p>Quando appare il banner, tocca <strong>"Installa"</strong></p>
               <div class="mockup android-banner">
                 <div class="mockup-icon"></div>
                 <div class="mockup-text">
