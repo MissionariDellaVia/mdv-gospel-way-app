@@ -4,7 +4,7 @@
     <metainfo>
       <template v-slot:title="{ content }">{{ content }}</template>
     </metainfo>
-
+    <HintManager/>
     <NetworkStatus/>
     <div class="row">
       <div class="col my-3 mx-auto">
@@ -16,9 +16,6 @@
         <component :is="Component"/>
       </transition>
     </router-view>
-
-    <!-- Swipe hint should come after router-view -->
-    <SwipeHint/>
 
     <!-- PWA Install Banners -->
     <InstallBanner/>
@@ -33,12 +30,12 @@
 import {useRouter} from 'vue-router'
 import {useMeta} from 'vue-meta'
 import NetworkStatus from './components/NetworkStatus.vue'
-import SwipeHint from './components/SwipeHint.vue'
 import InstallBanner from './components/InstallBanner.vue'
 import IOSInstallGuide from './components/IOSInstallGuide.vue'
 import UpdateNotification from './components/UpdateNotification.vue'
 import './registerServiceWorker'
 import PullToRefresh from "@/components/PullToRefresh.vue";
+import HintManager from "@/components/HintManager.vue";
 
 const router = useRouter()
 

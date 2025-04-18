@@ -120,7 +120,7 @@ export default {
 
       if (this.allowedToPull && !this.isRefreshing) {
         this.startY = e.touches[0].clientY;
-        if (navigator.vibrate) navigator.vibrate(5);
+        // Removed vibration
       }
     },
 
@@ -140,13 +140,9 @@ export default {
         this.waveControlPointY = Math.min(this.currentPull * 0.15, 70);
 
         // Check if we've reached threshold to refresh
-        const wasReady = this.readyToRefresh;
         this.readyToRefresh = this.currentPull >= this.threshold;
 
-        // Vibrate when crossing threshold (one-time)
-        if (!wasReady && this.readyToRefresh && navigator.vibrate) {
-          navigator.vibrate(15);
-        }
+        // Removed vibration
       }
     },
 
@@ -154,8 +150,7 @@ export default {
       if (this.allowedToPull && this.readyToRefresh && !this.isRefreshing) {
         this.isRefreshing = true;
 
-        // Vibrate for feedback
-        if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
+        // Removed vibration
 
         // Emit refresh event
         this.$emit('refresh');
@@ -333,7 +328,11 @@ export default {
 }
 
 @keyframes ptr-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
