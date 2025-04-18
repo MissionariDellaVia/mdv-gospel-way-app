@@ -1,35 +1,34 @@
 /* eslint-disable no-console */
-import { register } from 'register-service-worker'
+import {register} from 'register-service-worker'
 
-// Use the app version (not Date.now()) so SW only updates on a new build
+// stamp the SW URL only when your app version changes
 const swUrl = `${process.env.BASE_URL}service-worker.js?v=${process.env.VUE_APP_VERSION}`
 
 register(swUrl, {
     ready() {
-        console.log('Service worker active, serving from cache.')
+        console.log('SW active, serving from cache.')
     },
     registered(reg) {
-        console.log('Service worker registered.')
-        // Optional: check for updates every hour
+        console.log('SW registered.')
+        // hourly update checks
         setInterval(() => {
             console.log('Checking for SW update…')
             reg.update()
         }, 1000 * 60 * 60)
     },
     updatefound() {
-        console.log('New service worker found, downloading…')
+        console.log('New SW found, downloading…')
     },
     updated(reg) {
-        console.log('New service worker available, dispatching swUpdated.')
-        // Dispatch only when a new SW is actually waiting
+        console.log('New SW available, dispatching swUpdated.')
         document.dispatchEvent(
-            new CustomEvent('swUpdated', { detail: { registration: reg } })
+            new CustomEvent('swUpdated', {detail: {registration: reg}})
         )
     },
     offline() {
-        console.log('No internet connection — running offline.')
+        console.log('Offline mode.')
     },
-    error(error) {
-        console.error('SW registration error:', error)
+    error(err) {
+        console.error('SW registration error:', err)
     }
 })
