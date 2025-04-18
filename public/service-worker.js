@@ -1,88 +1,26 @@
-// Basic service worker
+/* eslint-disable no-restricted-globals */
+// Immediately take control on install/activate
+self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', evt => {
+    evt.waitUntil(self.clients.claim())
+})
 
-// Cache name with version
-const CACHE_NAME = 'gospelway-cache-v1';
-
-// Assets to cache
-const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json'
-];
-
-// Adjust paths for GitHub Pages if needed
-function adjustPaths(items) {
-    if (self.location.pathname.includes('/mdv-gospel-way-app/')) {
-        return items.map(item => {
-            if (item === '/') return '/mdv-gospel-way-app/';
-            return '/mdv-gospel-way-app' + item;
-        });
-    }
-    return items;
-}
-
-// Install event
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('Service worker installed - opening cache');
-                return cache.addAll(adjustPaths(urlsToCache));
-            })
-    );
-    // Force activation
-    self.skipWaiting();
-});
-
-// Activate event
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
-    // Claim clients
-    self.clients.claim();
-});
-
-// Fetch event
+// Network‑first with cache fallback
 self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET' ||
+        !event.request.url.startsWith(self.location.origin)) {
+        return
+    }
     event.respondWith(
         fetch(event.request)
-            .then(response => {
-                // Check if we received a valid response
-                if (!response || response.status !== 200 || response.type !== 'basic') {
-                    return response;
+            .then(res => {
+                if (res.ok) {
+                    // Cache a copy
+                    const clone = res.clone()
+                    caches.open('dynamic-cache').then(c => c.put(event.request, clone))
                 }
-
-                // Clone the response
-                const responseToCache = response.clone();
-
-                caches.open(CACHE_NAME)
-                    .then(cache => {
-                        cache.put(event.request, responseToCache);
-                    });
-
-                return response;
+                return res
             })
-            .catch(() => {
-                // Try to get from cache if network fails
-                return caches.match(event.request);
-            })
-    );
-});
-
-// Handle skip waiting message
-self.addEventListener('message', event => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-});
-
-console.log('Service worker loaded successfully');
+            .catch(() => caches.match(event.request))
+    )
+})

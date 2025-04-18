@@ -1,10 +1,17 @@
 const { defineConfig } = require('@vue/cli-service')
+const packageJson = require('./package.json')
+
+// Make current version available to the build
+process.env.VUE_APP_VERSION = packageJson.version
+
 module.exports = defineConfig({
   publicPath: process.env.NODE_ENV === 'production'
       ? '/'
       : '/mdv-gospel-way-app/',
   transpileDependencies: true,
   pwa: {
+    skipWaiting: true,
+    clientsClaim: true,
     name: 'La Via del Vangelo',
     themeColor: '#6E4F3A',
     msTileColor: '#281D02FF',
@@ -19,8 +26,8 @@ module.exports = defineConfig({
     },
     workboxPluginMode: 'InjectManifest',
     workboxOptions: {
-      swSrc: 'public/service-worker.js',
-      swDest: 'service-worker.js',
+      skipWaiting: true,
+      clientsClaim: true
     }
   }
 })

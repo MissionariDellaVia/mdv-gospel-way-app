@@ -23,63 +23,63 @@
   <IOSInstallGuide />
 
   <!-- App update notification -->
-  <div v-if="updateAvailable" class="update-notification">
-    Nuova versione disponibile!
-    <button @click="refreshApp" class="update-button">Aggiorna</button>
-  </div>
+  <UpdateNotification />
+
+  <!-- Version display (for debugging) -->
+  <VersionDisplay v-if="showVersionDisplay" />
+
 
   <!-- In your App.vue template, add this before closing </template> tag -->
 </template>
 
 <script setup>
-import {ref, onMounted, onBeforeUnmount} from 'vue'
+import {onMounted, ref} from 'vue'
 import {useMeta} from 'vue-meta'
 import {useRouter} from 'vue-router'
 import NetworkStatus from './components/NetworkStatus.vue'
 import SwipeHint from "@/components/SwipeHint.vue";
 import IOSInstallGuide from "@/components/IOSInstallGuide.vue";
 import InstallBanner from "@/components/InstallBanner.vue";
+import UpdateNotification from "@/components/UpdateNotification.vue";
+import VersionDisplay from "@/components/VersionDisplay.vue";
 
 const router = useRouter()
-const updateAvailable = ref(false)
-const registration = ref(null)
+const showVersionDisplay = ref(false)
 
 function pushRoute(route) {
   router.push(route)
 }
 
-// Handle service worker updates
-function handleSwUpdate(event) {
-  updateAvailable.value = true
-  registration.value = event.detail
-}
-
-function refreshApp() {
-  updateAvailable.value = false
-  // Check if there's a waiting service worker
-  if (registration.value && registration.value.waiting) {
-    // Send message to the waiting service worker
-    registration.value.waiting.postMessage({type: 'SKIP_WAITING'})
-  }
-  // Reload the page for the new version
-  window.location.reload()
-}
-
 onMounted(() => {
-  // Listen for service worker updates
-  document.addEventListener('swUpdated', handleSwUpdate)
+  const keys = {
+    v: false,
+    d: false,
+    t: false
+  }
 
-  // Check if the app is in standalone mode (installed)
-  window.addEventListener('load', () => {
-    if (window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true) {
-      console.log('App is running in standalone mode')
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'v') keys.v = true
+    if (e.key === 'd') keys.d = true
+    if (e.key === 't') keys.t = true
+
+    if (keys.v && keys.d && keys.t) {
+      showVersionDisplay.value = !showVersionDisplay.value
     }
+  })
+
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'v') keys.v = false
+    if (e.key === 'd') keys.d = false
+    if (e.key === 't') keys.t = false
   })
 })
 
-onBeforeUnmount(() => {
-  document.removeEventListener('swUpdated', handleSwUpdate)
+useMeta({
+  title: 'La Via del Vangelo',
+  htmlAttrs: {
+    lang: 'it',
+    amp: true
+  }
 })
 
 useMeta({

@@ -1,56 +1,35 @@
 /* eslint-disable no-console */
 import { register } from 'register-service-worker'
 
-// Get the correct base path for service worker
-const getBaseUrl = () => {
-    // Check if we're on GitHub Pages
-    if (window.location.pathname.includes('/mdv-gospel-way-app/')) {
-        return '/mdv-gospel-way-app/'
-    }
-    // Default to whatever Vue provides
-    return process.env.BASE_URL || '/'
-}
+// Use the app version (not Date.now()) so SW only updates on a new build
+const swUrl = `${process.env.BASE_URL}service-worker.js?v=${process.env.VUE_APP_VERSION}`
 
-// Register with the correct path
-register(`${getBaseUrl()}service-worker.js`, {
+register(swUrl, {
     ready() {
-        console.log('App is being served from cache by a service worker.\nFor more details, visit https://goo.gl/AFskqB')
+        console.log('Service worker active, serving from cache.')
     },
-    registered(registration) {
-        console.log('Service worker has been registered successfully.')
-
-        // Check for updates every hour
+    registered(reg) {
+        console.log('Service worker registered.')
+        // Optional: check for updates every hour
         setInterval(() => {
-            console.log('Checking for service worker updates...')
-            registration.update()
-                .catch(error => console.error('Error checking for SW updates:', error))
+            console.log('Checking for SW update…')
+            reg.update()
         }, 1000 * 60 * 60)
     },
-    cached() {
-        console.log('Content has been cached for offline use.')
-    },
     updatefound() {
-        console.log('New content is downloading.')
+        console.log('New service worker found, downloading…')
     },
-    updated(registration) {
-        console.log('New content is available; please refresh.')
-
+    updated(reg) {
+        console.log('New service worker available, dispatching swUpdated.')
+        // Dispatch only when a new SW is actually waiting
         document.dispatchEvent(
-            new CustomEvent('swUpdated', {
-                detail: { registration }
-            })
+            new CustomEvent('swUpdated', { detail: { registration: reg } })
         )
     },
     offline() {
-        console.log('No internet connection found. App is running in offline mode.')
+        console.log('No internet connection — running offline.')
     },
     error(error) {
-        console.error('Error during service worker registration:', error)
-        console.log('Registration attempted at:', `${getBaseUrl()}service-worker.js`)
-
-        // Add more debug info
-        if (error && error.message) {
-            console.log('Error details:', error.message)
-        }
+        console.error('SW registration error:', error)
     }
 })
