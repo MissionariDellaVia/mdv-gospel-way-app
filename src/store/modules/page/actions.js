@@ -1,154 +1,125 @@
-// noinspection JSUnresolvedVariable
+import StorageService from '@/services/StorageService';
+import ApiService from '@/services/ApiService';
+
+// Configuration
+const CACHE_CONFIG = {
+    HOME_INFO: {
+        key: 'home_info_cache',
+        expiry: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    },
+    GOSPEL: {
+        key: 'gospel_cache',
+        expiry: 24 * 60 * 60 * 1000,
+    },
+    ALLOWED_DATES: {
+        key: 'allowed_dates_cache',
+        expiry: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    }
+};
+
 export default {
     async loadHomeInfo(context) {
-        console.info("Environment base URL: " + process.env.VUE_APP_MDV_BASE_URL);
         const date = context.getters.currentDate;
-        const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/info/${date}`;
-        console.debug("load home info -> " + baseUrl);
+        const cacheKey = CACHE_CONFIG.HOME_INFO.key;
 
         try {
-            const response = await fetch(baseUrl);
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                console.error("Errore nella richiesta");
-                throw new Error(responseData.message || 'Failed to fetch!');
+            // Try to get from cache first
+            const cachedData = await StorageService.getItem(cacheKey);
+            if (cachedData && cachedData.date === date && !StorageService.isExpired(cachedData.timestamp, CACHE_CONFIG.HOME_INFO.expiry)) {
+                console.debug("Using cached home info for date:", date);
+                context.commit('setHomeInfo', {
+                    saint: cachedData.data.saints,
+                    liturgy: cachedData.data.liturgy
+                });
+                return cachedData.data;
             }
 
-            // Store in localStorage - use a single key instead of date-based keys
-            try {
-                localStorage.setItem('current_home_info', JSON.stringify({
-                    date: date,
-                    data: responseData
-                }));
-            } catch (storageError) {
-                console.warn("Failed to store home info in localStorage:", storageError);
-                // Continue even if storage fails
-            }
+            // Fetch from API if cache miss or expired
+            const responseData = await ApiService.getHomeInfo(date);
 
-            context.commit('setHomeInfo', { saint: responseData.saints, liturgy: responseData.liturgy});
+            // Update cache
+            await StorageService.setItem(cacheKey, {
+                date,
+                data: responseData,
+                timestamp: Date.now()
+            });
+
+            context.commit('setHomeInfo', {
+                saint: responseData.saints,
+                liturgy: responseData.liturgy
+            });
             return responseData;
         } catch (error) {
-            console.error("Errore nella richiesta:", error);
-
-            // Try to load from cache if available
-            try {
-                const cachedData = localStorage.getItem('current_home_info');
-                if (cachedData) {
-                    const parsed = JSON.parse(cachedData);
-                    // Only use cached data if it's for the requested date
-                    if (parsed.date === date) {
-                        const parsedData = parsed.data;
-                        context.commit('setHomeInfo', {
-                            saint: parsedData.saints,
-                            liturgy: parsedData.liturgy
-                        });
-                        return parsedData;
-                    }
-                }
-            } catch (cacheError) {
-                console.warn("Error reading from cache:", cacheError);
-            }
-
+            console.error("Error in loadHomeInfo:", error);
             throw error;
         }
     },
 
     async loadGospelWay(context, date) {
-        const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/gospel/${date}`;
-        console.debug("load gospel -> " + baseUrl);
+        const cacheKey = CACHE_CONFIG.GOSPEL.key;
 
         try {
-            const response = await fetch(baseUrl);
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                console.error("Errore nella richiesta");
-                throw new Error(responseData.message || 'Failed to fetch!');
+            // Try to get from cache first
+            const cachedData = await StorageService.getItem(cacheKey);
+            if (cachedData && cachedData.date === date && !StorageService.isExpired(cachedData.timestamp, CACHE_CONFIG.GOSPEL.expiry)) {
+                console.debug("Using cached gospel for date:", date);
+                const parsedData = cachedData.data;
+                context.commit('setTodayGospelWay', parsedData.today);
+                context.commit('setConnectedGospelWay', parsedData.connected);
+                context.commit('setConnectedVideos', parsedData.videos);
+                return parsedData;
             }
 
-            // Store in localStorage using a single key instead of date-based keys
-            try {
-                localStorage.setItem('current_gospel', JSON.stringify({
-                    date: date,
-                    data: responseData
-                }));
-            } catch (storageError) {
-                console.warn("Failed to store gospel in localStorage:", storageError);
-                // Continue even if storage fails
-            }
+            // Fetch from API if cache miss or expired
+            const responseData = await ApiService.getGospelWay(date);
+
+            // Update cache
+            await StorageService.setItem(cacheKey, {
+                date,
+                data: responseData,
+                timestamp: Date.now()
+            });
 
             context.commit('setTodayGospelWay', responseData.today);
             context.commit('setConnectedGospelWay', responseData.connected);
             context.commit('setConnectedVideos', responseData.videos);
             return responseData;
         } catch (error) {
-            console.error("Errore nella richiesta:", error);
-
-            // Try to load from cache if available
-            try {
-                const cachedData = localStorage.getItem('current_gospel');
-                if (cachedData) {
-                    const parsed = JSON.parse(cachedData);
-                    // Only use cached data if it's for the requested date
-                    if (parsed.date === date) {
-                        const parsedData = parsed.data;
-                        context.commit('setTodayGospelWay', parsedData.today);
-                        context.commit('setConnectedGospelWay', parsedData.connected);
-                        context.commit('setConnectedVideos', parsedData.videos);
-                        return parsedData;
-                    }
-                }
-            } catch (cacheError) {
-                console.warn("Error reading from cache:", cacheError);
-            }
-
+            console.error("Error in loadGospelWay:", error);
             throw error;
         }
     },
 
     async loadAllowedDates(context) {
-        const baseUrl = `${process.env.VUE_APP_MDV_BASE_URL}/api/v1/dates`;
-        console.debug("load allowed dates -> " + baseUrl);
+        const cacheKey = CACHE_CONFIG.ALLOWED_DATES.key;
 
         try {
-            const response = await fetch(baseUrl);
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                console.error("Errore nella richiesta");
-                throw new Error(responseData.message || 'Failed to fetch!');
+            // Try to get from cache first
+            const cachedData = await StorageService.getItem(cacheKey);
+            if (cachedData && !StorageService.isExpired(cachedData.timestamp, CACHE_CONFIG.ALLOWED_DATES.expiry)) {
+                console.debug("Using cached allowed dates");
+                context.commit('setAllowedDates', cachedData.data);
+                return cachedData.data;
             }
 
-            // Store in localStorage for offline access - this is fine as single key
-            try {
-                localStorage.setItem('allowed_dates', JSON.stringify(responseData));
-            } catch (storageError) {
-                console.warn("Failed to store allowed dates in localStorage:", storageError);
-                // Continue even if storage fails
-            }
+            // Fetch from API if cache miss or expired
+            const responseData = await ApiService.getAllowedDates();
+
+            // Update cache
+            await StorageService.setItem(cacheKey, {
+                data: responseData,
+                timestamp: Date.now()
+            });
 
             context.commit('setAllowedDates', responseData);
             return responseData;
         } catch (error) {
-            console.error("Errore nella richiesta:", error);
-
-            // Try to load from cache if available
-            try {
-                const cachedData = localStorage.getItem('allowed_dates');
-                if (cachedData) {
-                    context.commit('setAllowedDates', JSON.parse(cachedData));
-                    return JSON.parse(cachedData);
-                }
-            } catch (cacheError) {
-                console.warn("Error reading from cache:", cacheError);
-            }
-
+            console.error("Error in loadAllowedDates:", error);
             throw error;
         }
     },
 
-    // Your existing changeDay method can remain unchanged
+    // Unchanged method
     async changeDay(context, payload) {
         let maxDate = new Date(context.getters.allowedDates[0]);
         let currDate = new Date(context.getters.currentDate);
@@ -165,4 +136,4 @@ export default {
             context.commit('changeDate', payload.fullDate);
         }
     }
-}
+};
