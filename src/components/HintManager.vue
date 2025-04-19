@@ -1,27 +1,15 @@
 <template>
   <div>
-    <!-- Enhanced help button -->
+    <!-- Simple help button with pulse animation -->
     <div class="help-button-container">
       <button
           @click="toggleHintMenu"
-          @mouseenter="showTooltip = true"
-          @mouseleave="showTooltip = false"
           class="help-button"
           :class="{ 'pulse-notification': anyNewHints, 'active': showHintMenu }"
           aria-label="Aiuto e suggerimenti"
       >
-        <!-- Subtle glow behind the icon -->
-        <div class="button-glow" :class="{ 'active': anyNewHints }"></div>
-
-        <!-- Icon -->
-        <i class="fa-solid fa-circle-question"></i>
+        <i class="fa-solid fa-question"></i>
       </button>
-
-      <!-- Tooltip moved to the right -->
-      <div class="help-tooltip" :class="{ 'active': showTooltip }">
-        <div class="tooltip-arrow"></div>
-        <span>Aiuto e suggerimenti</span>
-      </div>
     </div>
 
     <!-- Hint menu dropdown -->
@@ -96,7 +84,6 @@ export default {
       showingCarousel: false,
       currentHintType: null,
       carouselInitialSlide: 0,
-      showTooltip: false,
       // Track which hints are seen
       seenHints: {
         swipe: false,
@@ -180,13 +167,10 @@ export default {
       e.preventDefault();
       this.deferredPrompt = e;
     });
-
-    // Auto-show hints removed as requested
   },
   methods: {
     toggleHintMenu() {
       this.showHintMenu = !this.showHintMenu;
-      this.showTooltip = false;
     },
 
     closeHintMenu() {
@@ -286,107 +270,44 @@ export default {
 </script>
 
 <style scoped>
-/* Enhanced help button styles */
+/* Simple help button container */
 .help-button-container {
-  position: fixed;
+  position: absolute;
   top: 15px;
   left: 15px;
   z-index: 7000;
 }
 
-/* Tooltip positioned to the right of the button */
-.help-tooltip {
-  position: absolute;
-  top: 50%;
-  left: calc(100% + 10px); /* Position to the right with 10px gap */
-  transform: translateY(-50%) scale(0.7);
-  background-color: rgba(40, 29, 2, 0.9);
-  color: #D3B282;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-  z-index: 7001;
-}
-
-.help-tooltip.active {
-  opacity: 1;
-  transform: translateY(-50%) scale(1);
-}
-
-.tooltip-arrow {
-  position: absolute;
-  top: 50%;
-  left: -6px; /* Position arrow on the left side */
-  transform: translateY(-50%) rotate(45deg);
-  width: 12px;
-  height: 12px;
-  background-color: rgba(40, 29, 2, 0.9);
-}
-
+/* Simple minimalist help button */
 .help-button {
-  width: 46px;
-  height: 46px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #b28a5a, #A67D51);
+  background: #A67D51;
   color: #281D02;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 18px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Subtle 3D lighting effect */
-.help-button:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 50%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.2), transparent);
-  pointer-events: none;
-}
-
-/* Glow effect behind icon */
-.button-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, rgba(211, 178, 130, 0.6) 0%, rgba(211, 178, 130, 0) 70%);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-.button-glow.active {
-  opacity: 1;
+  transition: background-color 0.2s, transform 0.2s;
 }
 
 .help-button:hover {
-  transform: translateY(-3px) rotate(3deg);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
-  background: linear-gradient(135deg, #c69b6a, #b28a5a);
+  background: #b28a5a;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
 }
 
 .help-button:active, .help-button.active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #996c45, #A67D51);
+  transform: translateY(0);
+  background: #996c45;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
-/* Replaced red dot with pulse effect */
+/* Pulse animation for new hints */
 .help-button.pulse-notification {
   animation: button-pulse 2s infinite;
 }
@@ -396,14 +317,14 @@ export default {
     box-shadow: 0 0 0 0 rgba(211, 178, 130, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(211, 178, 130, 0);
+    box-shadow: 0 0 0 8px rgba(211, 178, 130, 0);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(211, 178, 130, 0);
   }
 }
 
-/* Rest of your existing HintManager styles */
+/* Hint menu overlay */
 .hint-menu-overlay {
   position: fixed;
   top: 0;
@@ -419,27 +340,19 @@ export default {
 
 .hint-menu {
   background-color: #58412b;
-  border: 2px solid #A67D51;
-  border-radius: 15px;
-  padding: 25px;
+  border: 1px solid #A67D51;
+  border-radius: 12px;
+  padding: 20px;
   width: 85%;
   max-width: 350px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  animation: menu-appear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  transform-origin: top left;
-}
-
-@keyframes menu-appear {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 h3 {
   color: #d3b282;
-  font-size: 22px;
+  font-size: 20px;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   text-align: center;
 }
 
@@ -460,13 +373,13 @@ h3 {
   display: flex;
   align-items: center;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background-color 0.2s;
   position: relative;
   text-align: left;
 }
 
 .hint-button i {
-  font-size: 20px;
+  font-size: 18px;
   margin-right: 15px;
   color: #A67D51;
 }
@@ -485,24 +398,17 @@ h3 {
 
 .hint-button:hover {
   background-color: #7a5940;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.hint-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .new-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: -5px;
+  right: -5px;
   background-color: #e74c3c;
   color: white;
   font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
+  padding: 2px 5px;
+  border-radius: 8px;
   font-weight: bold;
 }
 
@@ -510,43 +416,36 @@ h3 {
   background-color: #A67D51;
   color: #281D02;
   border: none;
-  padding: 12px 25px;
+  padding: 10px 20px;
   border-radius: 6px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
+  width: 100%;
+  transition: background-color 0.2s;
 }
 
 .close-button:hover {
-  background-color: #d3b282;
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.close-button:active {
-  transform: scale(0.98);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background-color: #b28a5a;
 }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.2s;
 }
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
-  transform: scale(0.95);
 }
 
-/* Improved Mobile Experience */
 @media (max-width: 768px) {
   .help-button-container {
     top: 10px;
     left: 10px;
   }
 
-  .help-tooltip {
-    display: none;
+  .hint-menu {
+    width: 90%;
+    padding: 15px;
   }
 }
 </style>

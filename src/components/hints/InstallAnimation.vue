@@ -7,14 +7,14 @@
         <div class="ios-browser-top">
           <div class="ios-url-bar">
             <i class="fa-solid fa-lock fa-xs"></i>
-            <span>vangelo.app</span>
+            <span>ViaDelVangelo</span>
           </div>
         </div>
 
         <!-- Content area - smaller to fit everything -->
         <div class="ios-browser-content">
           <div class="app-icon mini"></div>
-          <div class="app-name">Vangelo.app</div>
+          <div class="app-name">ViaDelVangelo</div>
         </div>
 
         <!-- Bottom toolbar -->
@@ -34,7 +34,7 @@
         <div v-if="showPrompt" class="ios-share-sheet">
           <div class="ios-sheet-header">
             <div class="sheet-app-icon"></div>
-            <div class="sheet-app-url">vangelo.app</div>
+            <div class="sheet-app-url">ViaDelVangelo</div>
           </div>
 
           <div class="ios-sheet-actions">
@@ -79,7 +79,7 @@
 
       <!-- Android-specific UI -->
       <div v-else-if="deviceType === 'android'" class="browser-bar">
-        <div class="url-bar">vangelo.app</div>
+        <div class="url-bar">ViaDelVangelo</div>
         <div class="menu-button" :class="{'pulse': isHighlighted}">
           <i class="fa-solid fa-ellipsis-vertical"></i>
         </div>
@@ -88,7 +88,7 @@
       <!-- Desktop-specific UI -->
       <div v-else class="browser-bar">
         <div class="url-bar">
-          <span class="url-protocol">https://</span>vangelo.app
+          <span class="url-protocol">https://</span>ViaDelVangelo
           <span v-if="isHighlighted" class="install-icon">
             <i class="fa-solid fa-plus-square"></i>
           </span>
@@ -98,7 +98,7 @@
       <!-- Common browser content -->
       <div v-if="deviceType !== 'ios'" class="browser-content">
         <div class="app-icon"></div>
-        <div class="app-name">Vangelo.app</div>
+        <div class="app-name">ViaDelVangelo</div>
       </div>
 
       <!-- Installation prompt for Android/Desktop -->
