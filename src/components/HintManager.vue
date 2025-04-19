@@ -19,6 +19,16 @@
           <h3>Guide e Suggerimenti</h3>
 
           <div class="hint-options">
+            <!-- Add the new zoom hint button -->
+            <button @click="showCarousel('zoom')" class="hint-button">
+              <i class="fa-solid fa-text-height"></i>
+              <div>
+                <strong>Dimensione del testo</strong>
+                <small>Come ingrandire o ridurre il testo</small>
+              </div>
+              <span class="new-badge" v-if="!seenHints.zoom">Nuovo</span>
+            </button>
+
             <button @click="showCarousel('swipe')" class="hint-button">
               <i class="fa-solid fa-calendar-week"></i>
               <div>
@@ -72,6 +82,7 @@ import HintCarousel from './hints/HintCarousel.vue';
 import SwipeAnimation from './hints/SwipeAnimation.vue';
 import PtrAnimation from './hints/PtrAnimation.vue';
 import InstallAnimation from './hints/InstallAnimation.vue';
+import ZoomAnimation from './hints/ZoomAnimation.vue';
 
 export default {
   name: 'HintManager',
@@ -84,8 +95,9 @@ export default {
       showingCarousel: false,
       currentHintType: null,
       carouselInitialSlide: 0,
-      // Track which hints are seen
+      // Track which hints are seen (add zoom)
       seenHints: {
+        zoom: false,
         swipe: false,
         ptr: false,
         install: false
@@ -97,11 +109,33 @@ export default {
   },
   computed: {
     anyNewHints() {
-      return !this.seenHints.swipe || !this.seenHints.ptr || !this.seenHints.install;
+      return !this.seenHints.zoom || !this.seenHints.swipe || !this.seenHints.ptr || !this.seenHints.install;
     },
     carouselSlides() {
       // Return the appropriate slides based on the current hint type
       switch(this.currentHintType) {
+          // Add zoom case
+        case 'zoom': {
+          return [
+            {
+              component: ZoomAnimation,
+              title: 'Regola dimensione del testo',
+              description: 'Tocca l\'icona in basso a destra per controllare lo zoom del testo'
+            },
+            {
+              component: ZoomAnimation,
+              title: 'Usa i controlli di zoom',
+              description: 'Premi + per ingrandire, - per ridurre il testo del vangelo'
+            },
+            {
+              component: ZoomAnimation,
+              props: { showKeyboardShortcuts: true },
+              title: 'Scorciatoie da tastiera',
+              description: 'Su computer, usa Ctrl++ e Ctrl+- per regolare il testo'
+            }
+          ];
+        }
+
         case 'swipe': {
           return [
             {
@@ -167,6 +201,13 @@ export default {
       e.preventDefault();
       this.deferredPrompt = e;
     });
+
+    // Auto-show zoom hint if it hasn't been seen (optional)
+    if (!this.seenHints.zoom) {
+      setTimeout(() => {
+        this.showCarousel('zoom');
+      }, 2000);
+    }
   },
   methods: {
     toggleHintMenu() {
@@ -202,11 +243,13 @@ export default {
     loadSeenHintsFromStorage() {
       try {
         // Load seen status for each hint
+        const zoomSeen = localStorage.getItem('zoomTutorialSeen') === 'true';
         const swipeSeen = localStorage.getItem('swipeTutorialSeen') === 'true';
         const ptrSeen = localStorage.getItem('ptrTutorialSeen') === 'true';
         const installSeen = localStorage.getItem('installTutorialSeen') === 'true';
 
         this.seenHints = {
+          zoom: zoomSeen,
           swipe: swipeSeen,
           ptr: ptrSeen,
           install: installSeen
@@ -218,6 +261,7 @@ export default {
 
     saveSeenHintsToStorage() {
       try {
+        localStorage.setItem('zoomTutorialSeen', this.seenHints.zoom);
         localStorage.setItem('swipeTutorialSeen', this.seenHints.swipe);
         localStorage.setItem('ptrTutorialSeen', this.seenHints.ptr);
         localStorage.setItem('installTutorialSeen', this.seenHints.install);
@@ -268,7 +312,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 /* Simple help button container */
 .help-button-container {
