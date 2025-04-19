@@ -44,4 +44,35 @@ app.component('base-spinner', BaseSpinner);
 app.component('vue-date-picker', VueDatePicker);
 app.component('ScrollToTopButton', ScrollToTopButton)
 
+// Immediately execute cleanup code here, without relying on store dispatch
+console.log("Starting legacy storage cleanup...");
+try {
+    // Get all localStorage keys
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        keys.push(localStorage.key(i));
+    }
+
+    // Log what we found for debugging
+    console.log(`Found ${keys.length} items in localStorage`);
+
+    // Remove any old gospel_YYYY-MM-DD keys
+    const gospelPattern = /^gospel_\d{4}-\d{2}-\d{2}$/;
+    const homePattern = /^home_info_\d{4}-\d{2}-\d{2}$/;
+    let removedCount = 0;
+
+    keys.forEach(key => {
+        if (gospelPattern.test(key) || homePattern.test(key)) {
+            console.log(`Removing legacy key: ${key}`);
+            localStorage.removeItem(key);
+            removedCount++;
+        }
+    });
+
+    console.log(`Legacy storage cleanup complete. Removed ${removedCount} items.`);
+} catch (error) {
+    console.warn("Error during legacy storage cleanup:", error);
+}
+
+
 app.mount('#app');
