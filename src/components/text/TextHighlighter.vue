@@ -5,54 +5,8 @@
       <slot></slot>
     </div>
 
-    <!-- Floating style selector toolbar - positioned above text -->
-    <div
-        v-if="showHighlightTools && highlightMode"
-        ref="highlightToolbar"
-        class="highlight-toolbar"
-        :style="toolbarPosition"
-    >
-      <!-- Style selector tabs -->
-      <div class="highlight-style-tabs">
-        <button
-            @click="highlightStyle = 'background'"
-            class="style-tab"
-            :class="{'active': highlightStyle === 'background'}"
-        >
-          Evidenzia
-        </button>
-        <button
-            @click="highlightStyle = 'underline'"
-            class="style-tab"
-            :class="{'active': highlightStyle === 'underline'}"
-        >
-          Sottolinea
-        </button>
-      </div>
-
-      <!-- Color options based on selected style -->
-      <div class="highlight-colors">
-        <button
-            v-for="color in currentStyleColors"
-            :key="color.name"
-            @click="applyHighlight(color.value, highlightStyle)"
-            class="color-btn"
-            :title="color.name"
-        >
-          <span
-              class="color-preview"
-              :style="stylePreview(color.value)"
-          ></span>
-        </button>
-      </div>
-
-      <button @click="cancelSelection" class="action-btn cancel-btn">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- Control buttons with clear labels -->
-    <div class="highlighter-control-bar">
+    <!-- Control buttons with integrated color selection -->
+    <div class="highlighter-control-bar" ref="controlBar">
       <!-- Highlight toggle button -->
       <button
           @click="toggleHighlightMode"
@@ -63,6 +17,27 @@
         <i class="fa-solid fa-highlighter"></i>
         <span class="control-label">Evidenzia</span>
       </button>
+
+      <!-- Integrated color selection bar - shown when text is selected in highlight mode -->
+      <div
+          v-if="showColorSelection && highlightMode"
+          class="color-selection-bar"
+      >
+        <div class="color-selection-label">Colori:</div>
+        <div class="highlight-colors">
+          <button
+              v-for="color in highlightColors"
+              :key="color.name"
+              @click="applyHighlight(color.value)"
+              class="color-btn"
+              :style="{ backgroundColor: color.value }"
+              :title="color.name"
+          ></button>
+        </div>
+        <button @click="cancelSelection" class="action-btn cancel-btn">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
       <!-- Collection button -->
       <button
@@ -112,12 +87,7 @@
                   class="highlight-color"
                   :style="{ backgroundColor: highlight.color }"
               ></div>
-              <div class="highlight-text">
-                <span
-                    :class="highlight.style === 'underline' ? 'underlined-text' : ''"
-                    :style="highlight.style === 'underline' ? { borderBottomColor: highlight.color } : {}"
-                >{{ highlight.text }}</span>
-              </div>
+              <div class="highlight-text">{{ highlight.text }}</div>
               <div class="highlight-actions">
                 <button @click="removeHighlight(index)" class="remove-btn">
                   <i class="fa-solid fa-trash-can"></i>
@@ -162,32 +132,21 @@ export default {
     return {
       highlightMode: false,
       selectedRange: null,
-      showHighlightTools: false,
-      toolbarPosition: {
-        top: '0px',
-        left: '0px'
-      },
-      highlightStyle: 'background',
-      backgroundColors: [
+      showColorSelection: false,
+      highlightColors: [
         { name: 'Giallo', value: 'rgba(255, 230, 0, 0.35)' },
         { name: 'Azzurro', value: 'rgba(0, 176, 255, 0.35)' },
         { name: 'Rosa', value: 'rgba(255, 121, 168, 0.35)' },
         { name: 'Verde', value: 'rgba(0, 230, 118, 0.35)' },
         { name: 'Viola', value: 'rgba(187, 107, 217, 0.35)' }
       ],
-      underlineColors: [
-        { name: 'Oro', value: '#d4a017' },
-        { name: 'Rosso', value: '#c13515' },
-        { name: 'Blu', value: '#1565c0' },
-        { name: 'Verde', value: '#2e7d32' },
-        { name: 'Viola', value: '#6a1b9a' }
-      ],
       highlights: [],
       highlightId: 1,
       showCollection: false,
-      currentDate: new Date('2025-05-13T20:06:56Z'),
+      currentDate: new Date('2025-05-13T20:20:12Z'),
       isMobile: false,
-      lastTouchY: 0
+      lastTouchY: 0,
+      userName: 'Alessandro-Mac7'
     };
   },
   computed: {
@@ -203,9 +162,6 @@ export default {
         minute: '2-digit'
       };
       return this.currentDate.toLocaleDateString('it-IT', options);
-    },
-    currentStyleColors() {
-      return this.highlightStyle === 'background' ? this.backgroundColors : this.underlineColors;
     }
   },
   mounted() {
@@ -214,6 +170,7 @@ export default {
 
     // Setup event listeners
     document.addEventListener('mouseup', this.checkSelection);
+    document.addEventListener('keydown', this.handleKeyDown);
 
     if (this.isMobile) {
       document.addEventListener('selectionchange', this.handleSelectionChange);
@@ -230,6 +187,7 @@ export default {
   beforeUnmount() {
     // Clean up event listeners
     document.removeEventListener('mouseup', this.checkSelection);
+    document.removeEventListener('keydown', this.handleKeyDown);
 
     if (this.isMobile) {
       document.removeEventListener('selectionchange', this.handleSelectionChange);
@@ -240,15 +198,10 @@ export default {
     document.removeEventListener('click', this.handleOutsideClick);
   },
   methods: {
-    // Helper method to preview color styles
-    stylePreview(color) {
-      if (this.highlightStyle === 'background') {
-        return { backgroundColor: color };
-      } else {
-        return {
-          backgroundColor: 'transparent',
-          borderBottom: `3px solid ${color}`
-        };
+    handleKeyDown(event) {
+      // Handle Escape key to cancel selection
+      if (event.key === 'Escape' && this.showColorSelection) {
+        this.cancelSelection();
       }
     },
 
@@ -294,7 +247,7 @@ export default {
         // No text selected, hide toolbar after a short delay
         setTimeout(() => {
           if (!window.getSelection().toString().trim()) {
-            this.hideTools();
+            this.cancelSelection();
           }
         }, 300);
       }
@@ -304,7 +257,7 @@ export default {
       this.highlightMode = !this.highlightMode;
 
       if (!this.highlightMode) {
-        this.hideTools();
+        this.cancelSelection();
       } else if (this.isMobile) {
         this.showMobileTip();
       }
@@ -346,22 +299,39 @@ export default {
       const text = selection.toString().trim();
 
       if (text && this.isSelectionWithinContent(selection)) {
+        // Save the selection range
         this.selectedRange = selection.getRangeAt(0).cloneRange();
-        this.showHighlightToolbar(selection);
-      } else {
-        // Don't hide when clicking inside toolbar or its buttons
-        if (event && (
-            (event.type === 'touchend' && this.isClickInsideToolbar(event)) ||
-            (event.target && (
-                event.target.closest('.highlight-toolbar') ||
-                event.target.closest('.color-btn') ||
-                event.target.closest('.action-btn')
-            ))
-        )) {
-          return;
-        }
+        // Show color selection in the control bar
+        this.showColorSelection = true;
 
-        this.hideTools();
+        // Make sure control bar is visible
+        this.$nextTick(() => {
+          this.scrollToControlBar();
+        });
+      } else if (
+          // Don't hide when clicking inside the color selection area
+          !(event && event.target && (
+              event.target.closest('.color-selection-bar') ||
+              event.target.closest('.color-btn') ||
+              event.target.closest('.action-btn')
+          ))
+      ) {
+        // Hide the color selection for clicks elsewhere
+        if (event && event.type === 'click') {
+          this.cancelSelection();
+        }
+      }
+    },
+
+    scrollToControlBar() {
+      // Ensure the control bar is visible when color selection is shown
+      if (this.$refs.controlBar) {
+        const rect = this.$refs.controlBar.getBoundingClientRect();
+
+        // If control bar is out of viewport, scroll to it
+        if (rect.bottom > window.innerHeight || rect.top < 0) {
+          this.$refs.controlBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     },
 
@@ -375,108 +345,29 @@ export default {
       return containerEl.contains(range.commonAncestorContainer);
     },
 
-    showHighlightToolbar(selection) {
-      if (!selection.rangeCount) return;
-
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-
-      // Get control bar position to check if we need to position near it
-      let controlBarRect = null;
-      const controlBar = document.querySelector('.highlighter-control-bar');
-      if (controlBar) {
-        controlBarRect = controlBar.getBoundingClientRect();
-      }
-
-      // Estimated toolbar dimensions
-      const toolbarHeight = 120;
-      const toolbarWidth = this.isMobile ? 240 : 220;
-
-      // Calculate where to position the toolbar
-      let topPosition, leftPosition;
-
-      // Try to position above the selection first
-      const selectionTop = rect.top;
-      const spaceAbove = selectionTop - window.scrollY;
-
-      // Center horizontally relative to selection
-      leftPosition = rect.left + (rect.width / 2) - (toolbarWidth / 2);
-
-      // Clamp horizontal position to stay within viewport
-      leftPosition = Math.max(10, Math.min(window.innerWidth - toolbarWidth - 10, leftPosition));
-
-      // If there's enough space above, place it there
-      if (spaceAbove >= toolbarHeight + 10) {
-        // Position above with some clearance
-        topPosition = window.scrollY + selectionTop - toolbarHeight - 15;
-      }
-      // Otherwise, check if we can position it near control bar
-      else if (controlBarRect) {
-        topPosition = window.scrollY + controlBarRect.bottom + 10;
-      }
-      // Last resort: position below selection
-      else {
-        topPosition = window.scrollY + rect.bottom + 10;
-      }
-
-      // Set the toolbar position
-      this.toolbarPosition = {
-        top: `${topPosition}px`,
-        left: `${leftPosition}px`
-      };
-
-      this.showHighlightTools = true;
-    },
-
-    hideTools() {
-      this.showHighlightTools = false;
-      this.selectedRange = null;
-    },
-
-    isClickInsideToolbar(event) {
-      const toolbar = this.$refs.highlightToolbar;
-      if (!toolbar) return false;
-
-      // For mobile touch events
-      if (event.changedTouches && event.changedTouches.length) {
-        const touch = event.changedTouches[0];
-        const touchPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-        return toolbar.contains(touchPoint);
-      }
-
-      // For regular mouse events
-      return toolbar.contains(event.target);
-    },
-
     handleOutsideClick(event) {
-      if (this.showHighlightTools &&
-          this.$refs.highlightToolbar &&
-          !this.$refs.highlightToolbar.contains(event.target) &&
+      // Hide colors if clicking outside the control bar and not on text
+      if (this.showColorSelection &&
+          this.$refs.controlBar &&
+          !this.$refs.controlBar.contains(event.target) &&
           this.$refs.contentContainer &&
           !this.$refs.contentContainer.contains(event.target)) {
-        this.hideTools();
+        this.cancelSelection();
       }
     },
 
-    applyHighlight(color, style) {
+    applyHighlight(color) {
       if (!this.selectedRange) return;
 
       const selection = window.getSelection();
       if (!selection.rangeCount) return;
 
-      // Create a highlight span with appropriate styling
+      // Create a highlight span
       const highlightId = `highlight-${this.highlightId++}`;
       const highlightSpan = document.createElement('span');
+      highlightSpan.className = 'text-highlight';
       highlightSpan.id = highlightId;
-
-      if (style === 'background') {
-        highlightSpan.className = 'text-highlight';
-        highlightSpan.style.backgroundColor = color;
-      } else {
-        highlightSpan.className = 'text-underline';
-        highlightSpan.style.borderBottom = `2px solid ${color}`;
-        highlightSpan.style.display = 'inline-block';
-      }
+      highlightSpan.style.backgroundColor = color;
 
       try {
         // Apply the highlight
@@ -487,43 +378,31 @@ export default {
           id: highlightId,
           text: this.selectedRange.toString(),
           color,
-          style,
           timestamp: this.currentDate.toISOString()
         });
 
         // Save highlights
         this.saveHighlights();
 
-        // Clear selection and hide tools
+        // Clear selection and hide color picker
         window.getSelection().removeAllRanges();
-        this.hideTools();
+        this.cancelSelection();
       } catch (error) {
         console.error('Error applying highlight:', error);
-        this.handleComplexSelection(color, style);
+        this.handleComplexSelection(color);
       }
     },
 
-    handleComplexSelection(color, style) {
+    handleComplexSelection(color) {
       const selectionText = window.getSelection().toString();
       const tempId = 'temp-selection-' + Date.now();
 
       if (this.isIOS()) {
-        this.applyHighlightToRangeAsParts(color, style, selectionText);
+        this.applyHighlightToRangeAsParts(color, selectionText);
       } else {
         try {
-          let styleAttr = '';
-          let className = '';
-
-          if (style === 'background') {
-            className = 'text-highlight';
-            styleAttr = `background-color:${color};`;
-          } else {
-            className = 'text-underline';
-            styleAttr = `border-bottom:2px solid ${color};display:inline-block;`;
-          }
-
           document.execCommand('insertHTML', false,
-              `<span id="${tempId}" class="${className}" style="${styleAttr}">${selectionText}</span>`);
+              `<span id="${tempId}" class="text-highlight" style="background-color:${color};">${selectionText}</span>`);
 
           const tempEl = document.getElementById(tempId);
           if (tempEl) {
@@ -534,7 +413,6 @@ export default {
               id: highlightId,
               text: selectionText,
               color,
-              style,
               timestamp: this.currentDate.toISOString()
             });
 
@@ -547,10 +425,10 @@ export default {
       }
 
       window.getSelection().removeAllRanges();
-      this.hideTools();
+      this.cancelSelection();
     },
 
-    applyHighlightToRangeAsParts(color, style, selectionText) {
+    applyHighlightToRangeAsParts(color, selectionText) {
       const tempWrapper = document.createElement('div');
       tempWrapper.className = 'temp-highlight-wrapper';
       tempWrapper.style.display = 'none';
@@ -564,17 +442,9 @@ export default {
         const range = selection.getRangeAt(0);
 
         const highlightSpan = document.createElement('span');
+        highlightSpan.className = 'text-highlight';
         highlightSpan.id = highlightId;
-
-        if (style === 'background') {
-          highlightSpan.className = 'text-highlight';
-          highlightSpan.style.backgroundColor = color;
-        } else {
-          highlightSpan.className = 'text-underline';
-          highlightSpan.style.borderBottom = `2px solid ${color}`;
-          highlightSpan.style.display = 'inline-block';
-        }
-
+        highlightSpan.style.backgroundColor = color;
         highlightSpan.innerText = selectionText;
 
         range.deleteContents();
@@ -584,7 +454,6 @@ export default {
           id: highlightId,
           text: selectionText,
           color,
-          style,
           timestamp: this.currentDate.toISOString()
         });
 
@@ -627,7 +496,8 @@ export default {
 
     cancelSelection() {
       window.getSelection().removeAllRanges();
-      this.hideTools();
+      this.selectedRange = null;
+      this.showColorSelection = false;
     },
 
     removeHighlight(index) {
@@ -767,14 +637,8 @@ export default {
           openQuote.style.fontFamily = 'Georgia, serif';
           openQuote.textContent = '"';
 
-          // Span with appropriate styling
           const textSpan = document.createElement('span');
           textSpan.textContent = highlight.text;
-
-          if (highlight.style === 'underline') {
-            textSpan.style.borderBottom = `2px solid ${highlight.color}`;
-            textSpan.style.display = 'inline-block';
-          }
 
           const closeQuote = document.createElement('span');
           closeQuote.style.fontSize = '24px';
@@ -794,7 +658,7 @@ export default {
 
         exportContainer.appendChild(highlightsSection);
 
-        // Add footer
+        // Add footer with user and date
         const footer = document.createElement('div');
         footer.style.padding = '0 20px 20px';
         footer.style.display = 'flex';
@@ -802,15 +666,14 @@ export default {
         footer.style.color = '#6e4f3a';
         footer.style.fontSize = '14px';
 
+        const userInfo = document.createElement('div');
+        userInfo.textContent = this.userName;
+
         const dateInfo = document.createElement('div');
         dateInfo.textContent = this.formattedDate;
 
-        const appInfo = document.createElement('div');
-        appInfo.style.fontStyle = 'italic';
-        appInfo.textContent = 'La Via del Vangelo';
-
+        footer.appendChild(userInfo);
         footer.appendChild(dateInfo);
-        footer.appendChild(appInfo);
 
         exportContainer.appendChild(footer);
 
@@ -912,28 +775,8 @@ export default {
   filter: brightness(1.1);
 }
 
-/* Styles for underlined text */
-.text-underline {
-  border-bottom-width: 2px;
-  border-bottom-style: solid;
-  padding-bottom: 1px;
-  transition: all 0.2s;
-}
-
-.text-underline:hover {
-  filter: brightness(1.1);
-}
-
-/* For better display in the collection view */
-.underlined-text {
-  border-bottom-width: 2px;
-  border-bottom-style: solid;
-  padding-bottom: 1px;
-}
-
 /* Make highlights work with the font styles in GwRawText */
-.html-raw .text-highlight,
-.html-raw .text-underline {
+.html-raw .text-highlight {
   font-family: inherit !important;
   color: inherit !important;
   font-size: inherit !important;
@@ -964,102 +807,14 @@ export default {
   transition: background-color 0.3s;
 }
 
-/* Highlight Toolbar with Style Tabs */
-.highlight-toolbar {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 0;
-  z-index: 1100;
-  animation: fadeIn 0.2s ease-out;
-  border: 2px solid rgba(166, 125, 81, 0.3);
-  overflow: hidden;
-}
-
-.highlight-style-tabs {
-  display: flex;
-  width: 100%;
-  border-bottom: 1px solid rgba(166, 125, 81, 0.2);
-}
-
-.style-tab {
-  flex: 1;
-  padding: 8px 0;
-  text-align: center;
-  background: transparent;
-  border: none;
-  font-family: 'Barlow Semi Condensed', sans-serif;
-  font-size: 0.9rem;
-  color: #6e4f3a;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.style-tab.active {
-  background-color: rgba(166, 125, 81, 0.1);
-  font-weight: 600;
-  color: #A67D51;
-}
-
-.highlight-colors {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px;
-}
-
-.color-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.15s ease;
-  overflow: hidden;
-}
-
-.color-btn:hover {
-  transform: scale(1.2);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-}
-
-.color-preview {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.action-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: transparent;
-  border: none;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #6e4f3a;
-  z-index: 1;
-}
-
-.cancel-btn {
-  background-color: #f0f0f0;
-  border-radius: 50%;
-}
-
-/* Control buttons - Clear and Intuitive */
+/* Control buttons and integrated color selection */
 .highlighter-control-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin: 10px 0;
+  position: relative;
+  align-items: center;
 }
 
 .control-btn {
@@ -1107,6 +862,62 @@ export default {
 
 .export-btn {
   background-color: rgba(110, 79, 58, 0.1);
+}
+
+/* Color selection bar integrated in toolbar */
+.color-selection-bar {
+  display: flex;
+  align-items: center;
+  background-color: rgba(166, 125, 81, 0.15);
+  border-radius: 20px;
+  padding: 6px 10px;
+  animation: fadeIn 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-selection-label {
+  margin-right: 8px;
+  font-size: 0.9rem;
+  color: #6e4f3a;
+  white-space: nowrap;
+}
+
+.highlight-colors {
+  display: flex;
+  gap: 6px;
+}
+
+.color-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.color-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn {
+  background: #f0f0f0;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  cursor: pointer;
+  color: #6e4f3a;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
 }
 
 /* Collection Modal */
@@ -1279,9 +1090,28 @@ export default {
 
 /* Mobile-specific adjustments */
 @media (max-width: 768px) {
+  .color-selection-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 8px;
+    margin: 8px 0;
+    width: 100%;
+  }
+
+  .color-selection-label {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 4px;
+    margin-right: 0;
+  }
+
+  .highlight-colors {
+    justify-content: center;
+  }
+
   .color-btn {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
   }
 
   .control-btn {
@@ -1301,33 +1131,17 @@ export default {
 
 /* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
