@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import HighlightControls from './HighlightControls.vue';
 import ColorSelection from './ColorSelection.vue';
 import HighlightCollection from './HighlightCollection.vue';
@@ -61,6 +61,10 @@ export default {
     reference: {
       type: String,
       default: ''
+    },
+    currentDate: {
+      type: [Date, String],
+      required: true
     }
   },
   setup(props) {
@@ -75,7 +79,7 @@ export default {
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-13T20:24:18Z'));
+    const currentDate = ref(new Date('2025-05-13T20:43:28Z'));
     const userName = ref('Alessandro-Mac7');
 
     // Color palette
@@ -108,6 +112,7 @@ export default {
       applyHighlight,
       cancelSelection,
       removeHighlight,
+      clearAllHighlights,
       loadHighlights,
       setupSelectionListeners,
       cleanupSelectionListeners
@@ -171,7 +176,7 @@ export default {
     }
 
     onMounted(() => {
-      // Load saved highlights
+      // Load saved highlights for the current date
       loadHighlights(props.reference);
 
       // Setup iOS fixes if needed
@@ -187,6 +192,46 @@ export default {
       // Clean up event listeners
       cleanupSelectionListeners();
     });
+
+    // Watch for date changes and clear highlights
+    watch(() => props.currentDate, (newDate, oldDate) => {
+      if (newDate !== oldDate) {
+        // Clear all highlights when date changes
+        clearAllHighlights(props.reference);
+
+        // Show subtle notification to user
+        showDateChangeNotification();
+      }
+    });
+
+    function showDateChangeNotification() {
+      const toast = document.createElement('div');
+      toast.className = 'date-change-notification';
+      toast.textContent = 'Data cambiata. Le evidenziazioni sono state ripristinate.';
+      toast.style.position = 'fixed';
+      toast.style.bottom = '20px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = 'rgba(166, 125, 81, 0.9)';
+      toast.style.color = 'white';
+      toast.style.padding = '8px 16px';
+      toast.style.borderRadius = '20px';
+      toast.style.zIndex = '1000';
+      toast.style.fontSize = '14px';
+      toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+          if (toast.parentNode) {
+            document.body.removeChild(toast);
+          }
+        }, 500);
+      }, 3000);
+    }
 
     return {
       // Template refs
@@ -270,17 +315,33 @@ export default {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

@@ -7,7 +7,7 @@ export default function useHighlighter(options) {
         highlightMode,
         selectedRange,
         highlights,
-        highlightId,  // This is the reference to the counter
+        highlightId,
         showColorSelection
     } = options;
 
@@ -97,7 +97,7 @@ export default function useHighlighter(options) {
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
 
-        // Create a highlight span - FIXED: renamed the local variable to avoid name conflict
+        // Create a highlight span - avoid name conflict
         const newElementId = `highlight-${highlightId.value++}`;
         const highlightSpan = document.createElement('span');
         highlightSpan.className = 'text-highlight';
@@ -203,7 +203,27 @@ export default function useHighlighter(options) {
         }
     }
 
-    // The rest of the code remains the same...
+    // Clear all highlights
+    function clearAllHighlights(reference = '') {
+        // Remove all highlight spans from the DOM
+        highlights.value.forEach(highlight => {
+            const highlightEl = document.getElementById(highlight.id);
+            if (highlightEl) {
+                const textNode = document.createTextNode(highlightEl.textContent);
+                highlightEl.parentNode.replaceChild(textNode, highlightEl);
+            }
+        });
+
+        // Clear the highlights array
+        highlights.value = [];
+
+        // Remove from localStorage
+        try {
+            localStorage.removeItem(`highlights-${reference || 'page'}`);
+        } catch (error) {
+            console.error('Error clearing highlights from storage:', error);
+        }
+    }
 
     // Show an error message when highlighting fails
     function showHighlightError() {
@@ -380,6 +400,7 @@ export default function useHighlighter(options) {
         removeHighlight,
         saveHighlights,
         loadHighlights,
+        clearAllHighlights,
         setupSelectionListeners,
         cleanupSelectionListeners
     };
