@@ -11,6 +11,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@vuepic/vue-datepicker/dist/main.css'
 import 'vue3-carousel/dist/carousel.css';
 import "bootstrap/dist/css/bootstrap.min.css";
+import './assets/styles/mobile-selection.css';
 import 'bootstrap';
 
 // Base component

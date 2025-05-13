@@ -4,11 +4,22 @@
     <button
         @click="$emit('toggle-mode')"
         class="control-btn highlight-btn"
-        :class="{'active': highlightMode, 'mobile-active': highlightMode && isMobile}"
+        :class="{'active': highlightMode}"
         aria-label="Attiva/disattiva evidenziazione"
     >
       <i class="fa-solid fa-highlighter"></i>
-      <span class="control-label">{{ highlightMode && isMobile ? 'Modalità selezione' : 'Evidenzia' }}</span>
+      <span class="control-label">Evidenzia</span>
+    </button>
+
+    <!-- Mobile selection button -->
+    <button
+        v-if="highlightMode && isMobile"
+        @click="$emit('select-text')"
+        class="control-btn selection-btn"
+        aria-label="Seleziona testo"
+    >
+      <i class="fa-solid fa-i-cursor"></i>
+      <span class="control-label">Seleziona Testo</span>
     </button>
 
     <!-- Collection button -->
@@ -56,7 +67,7 @@ export default {
       default: false
     }
   },
-  emits: ['toggle-mode', 'show-collection', 'export-highlights']
+  emits: ['toggle-mode', 'select-text', 'show-collection', 'export-highlights']
 };
 </script>
 
@@ -106,9 +117,9 @@ export default {
   color: white;
 }
 
-/* Special styling for mobile highlight mode */
-.highlight-btn.mobile-active {
+.selection-btn {
   background-color: #B2A348;
+  color: white;
   animation: pulse 2s infinite;
 }
 

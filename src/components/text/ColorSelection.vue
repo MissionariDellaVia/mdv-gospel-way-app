@@ -54,8 +54,8 @@ export default {
 }
 
 .color-btn {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.5);
   cursor: pointer;
@@ -71,8 +71,8 @@ export default {
 .action-btn {
   background: #f0f0f0;
   border: none;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -82,33 +82,23 @@ export default {
   color: #6e4f3a;
 }
 
-.cancel-btn:hover {
-  background-color: #e0e0e0;
-}
-
+/* Mobile-specific adjustments */
 @media (max-width: 768px) {
   .color-selection-bar {
     flex-wrap: wrap;
     justify-content: center;
     padding: 8px;
-    margin: 8px 0;
-    width: 100%;
   }
 
   .color-selection-label {
     width: 100%;
     text-align: center;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     margin-right: 0;
   }
 
   .highlight-colors {
     justify-content: center;
-  }
-
-  .color-btn {
-    width: 28px;
-    height: 28px;
   }
 }
 
