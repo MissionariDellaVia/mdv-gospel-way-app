@@ -94,11 +94,12 @@ export default {
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-13T21:36:18Z'));
+    const currentDate = ref(new Date('2025-05-13T21:42:56Z'));
     const userName = ref('Alessandro-Mac7');
     const isMobile = ref(false);
     const isSelectionModeActive = ref(false);
     const originalContent = ref('');
+    const selectedText = ref('');
     let selectionStyleEl = null;
 
     // Color palette
@@ -127,7 +128,6 @@ export default {
     const {
       isIOS,
       addIOSFocusFix,
-      applyHighlight,
       cancelSelection,
       removeHighlight,
       clearAllHighlights,
@@ -247,6 +247,7 @@ export default {
       // Ensure content is restored if needed
       if (contentContainer.value && originalContent.value) {
         contentContainer.value.innerHTML = originalContent.value;
+        contentContainer.value.setAttribute('contenteditable', 'false');
       }
 
       // Remove any selection-specific styles
@@ -261,78 +262,247 @@ export default {
       const text = selection.toString().trim();
 
       if (text) {
-        try {
-          // Save selection range for highlighting
-          selectedRange.value = selection.getRangeAt(0).cloneRange();
+        // Save the selected text
+        selectedText.value = text;
 
-          // Store selection text as backup
-          const selectedText = text;
+        // Exit selection mode
+        isSelectionModeActive.value = false;
 
-          // Exit selection mode
-          isSelectionModeActive.value = false;
-
-          // Restore original content
-          if (contentContainer.value && originalContent.value) {
-            contentContainer.value.innerHTML = originalContent.value;
-          }
-
-          // Remove selection-specific styles
-          if (selectionStyleEl && selectionStyleEl.parentNode) {
-            selectionStyleEl.parentNode.removeChild(selectionStyleEl);
-          }
-
-          // Implementation for text highlighting
-          if (isMobile.value) {
-            // For mobile, find text in the restored content
-            setTimeout(() => {
-              if (!selectedRange.value) {
-                // Find the text in the content
-                findAndSelectText(selectedText);
-              }
-
-              // Show color palette
-              showColorSelection.value = true;
-            }, 50);
-          } else {
-            // For desktop, just show the color palette
-            showColorSelection.value = true;
-          }
-        } catch (err) {
-          console.error("Error confirming selection:", err);
-          cancelSelectionMode();
-          alert("Si è verificato un errore. Riprova a selezionare il testo.");
+        // Restore original content
+        if (contentContainer.value && originalContent.value) {
+          contentContainer.value.innerHTML = originalContent.value;
+          contentContainer.value.setAttribute('contenteditable', 'false');
         }
+
+        // Remove selection-specific styles
+        if (selectionStyleEl && selectionStyleEl.parentNode) {
+          selectionStyleEl.parentNode.removeChild(selectionStyleEl);
+        }
+
+        // Show color palette
+        showColorSelection.value = true;
       } else {
         // If no text is selected, show a message
         alert("Per favore seleziona del testo prima di confermare.");
       }
     }
 
-    // Find and select text in content
-    function findAndSelectText(text) {
-      // Simple approach to find and select text
-      if (!contentContainer.value || !text) return;
+    // Apply highlight to the selected text
+    function applyHighlight(color) {
+      if (isMobile.value && selectedText.value) {
+        // Mobile-specific highlighting method
+        applyMobileHighlight(color);
+      } else {
+        // Desktop highlighting method
+        applyDesktopHighlight(color);
+      }
+    }
 
-      // Use browser's find functionality if available
-      if (window.find && window.getSelection) {
-        // Save scroll position
-        const scrollX = window.scrollX;
-        const scrollY = window.scrollY;
+    // Apply highlight for mobile devices
+    function applyMobileHighlight(color) {
+      if (!selectedText.value || !contentContainer.value) return;
 
-        // Clear existing selection
+      const text = selectedText.value;
+      const content = contentContainer.value;
+      const newId = `highlight-${highlightId.value++}`;
+
+      try {
+        // Escape special regex characters in the text
+        const safeText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // Create a regex that matches the text but not inside HTML tags
+        const regex = new RegExp(`(${safeText})(?![^<]*>|[^<>]*</)`, 'i');
+
+        // Replace the first occurrence with a highlighted span
+        if (regex.test(content.innerHTML)) {
+          content.innerHTML = content.innerHTML.replace(
+              regex,
+              `<span id="${newId}" class="text-highlight" style="background-color:${color};">$1</span>`
+          );
+
+          // Save highlight data
+          highlights.value.push({
+            id: newId,
+            text: text,
+            color,
+            timestamp: new Date().toISOString()
+          });
+
+          // Save to localStorage
+          localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
+            highlights: highlights.value,
+            html: contentContainer.value?.innerHTML
+          }));
+
+          // Clear selection state
+          selectedText.value = '';
+          showColorSelection.value = false;
+        } else {
+          // If regex fails, try a manual DOM insertion approach
+          insertManualHighlight(text, color);
+        }
+      } catch (error) {
+        console.error('Error applying mobile highlight:', error);
+        insertManualHighlight(text, color);
+      }
+    }
+
+    // Manual fallback for highlighting
+    function insertManualHighlight(text, color) {
+      try {
+        const content = contentContainer.value;
+        const newId = `highlight-${highlightId.value++}`;
+
+        // Create a special marker
+        const marker = `##HIGHLIGHT_MARKER_${Date.now()}##`;
+
+        // Replace the first occurrence of the text with the marker
+        const contentHtml = content.innerHTML;
+        const idx = contentHtml.indexOf(text);
+
+        if (idx >= 0) {
+          // We found the text, replace it with our marker
+          const before = contentHtml.substring(0, idx);
+          const after = contentHtml.substring(idx + text.length);
+          content.innerHTML = before + marker + after;
+
+          // Now replace the marker with our highlight span
+          content.innerHTML = content.innerHTML.replace(
+              marker,
+              `<span id="${newId}" class="text-highlight" style="background-color:${color};">${text}</span>`
+          );
+
+          // Save highlight data
+          highlights.value.push({
+            id: newId,
+            text: text,
+            color,
+            timestamp: new Date().toISOString()
+          });
+
+          // Save to localStorage
+          localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
+            highlights: highlights.value,
+            html: contentContainer.value?.innerHTML
+          }));
+        } else {
+          // Last resort: just append a new highlighted element at the end
+          fallbackHighlight(text, color);
+        }
+      } catch (e) {
+        console.error('Manual highlight insertion failed:', e);
+        fallbackHighlight(text, color);
+      } finally {
+        // Clear selection state
+        selectedText.value = '';
+        showColorSelection.value = false;
+      }
+    }
+
+    // Last resort fallback
+    function fallbackHighlight(text, color) {
+      const newId = `highlight-${highlightId.value++}`;
+
+      // Create highlighted span
+      const span = document.createElement('span');
+      span.id = newId;
+      span.className = 'text-highlight';
+      span.style.backgroundColor = color;
+      span.textContent = text;
+
+      // Save the data but don't insert anything
+      highlights.value.push({
+        id: newId,
+        text: text,
+        color,
+        timestamp: new Date().toISOString()
+      });
+
+      // Save to localStorage
+      localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
+        highlights: highlights.value,
+        html: contentContainer.value?.innerHTML
+      }));
+
+      // Show a success message
+      alert("Evidenziazione salvata!");
+
+      // Clear selection state
+      selectedText.value = '';
+      showColorSelection.value = false;
+    }
+
+    // Apply highlight for desktop
+    function applyDesktopHighlight(color) {
+      if (!selectedRange.value) return;
+
+      try {
+        // Get original selection
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        // Create a highlight span
+        const newId = `highlight-${highlightId.value++}`;
+        const highlightSpan = document.createElement('span');
+        highlightSpan.className = 'text-highlight';
+        highlightSpan.id = newId;
+        highlightSpan.style.backgroundColor = color;
+
+        // Get the text content of the selection
+        const text = selectedRange.value.toString();
+
+        // Apply the highlight
+        selectedRange.value.surroundContents(highlightSpan);
+
+        // Store highlight info
+        highlights.value.push({
+          id: newId,
+          text: text,
+          color,
+          timestamp: new Date().toISOString()
+        });
+
+        // Save to localStorage
+        localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
+          highlights: highlights.value,
+          html: contentContainer.value?.innerHTML
+        }));
+
+        // Clear selections
         window.getSelection().removeAllRanges();
+        showColorSelection.value = false;
+      } catch (error) {
+        console.error('Error applying desktop highlight:', error);
+        // Get the text from selection range
+        const text = selectedRange.value.toString();
 
-        // Find and select the text
-        const found = window.find(text);
+        // Try execCommand as fallback
+        try {
+          const newId = `highlight-${highlightId.value++}`;
+          document.execCommand('insertHTML', false,
+              `<span id="${newId}" class="text-highlight" style="background-color:${color};">${text}</span>`);
 
-        if (found) {
-          // Text was found and selected
-          const selection = window.getSelection();
-          selectedRange.value = selection.getRangeAt(0).cloneRange();
+          // Store highlight info
+          highlights.value.push({
+            id: newId,
+            text,
+            color,
+            timestamp: new Date().toISOString()
+          });
+
+          // Save to localStorage
+          localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
+            highlights: highlights.value,
+            html: contentContainer.value?.innerHTML
+          }));
+        } catch (e) {
+          console.error('Fallback highlighting failed:', e);
+          alert('Si è verificato un errore durante l\'evidenziazione. Riprova con una selezione più breve.');
         }
 
-        // Restore scroll position
-        window.scrollTo(scrollX, scrollY);
+        // Clear selections
+        window.getSelection().removeAllRanges();
+        showColorSelection.value = false;
       }
     }
 
