@@ -12,7 +12,7 @@
       </div>
     </div>
     <router-view v-slot="{ Component }">
-      <transition name="scale" mode="out-in">
+      <transition name="paper-reveal" mode="out-in">
         <component :is="Component"/>
       </transition>
     </router-view>
@@ -121,10 +121,13 @@ hr {
 .clickable {
   cursor: pointer;
   transition: all .1s;
+  -webkit-tap-highlight-color: transparent; /* Removes the default tap highlight on iOS */
+  user-select: none; /* Prevents text selection during taps */
+  touch-action: manipulation; /* Improves touch behavior */
 }
 
 .clickable:hover {
-  filter: brightness(120%);
+  filter: brightness(130%);
   transform: scale(0.98);
 }
 
@@ -133,15 +136,21 @@ hr {
   transform: scale(0.93);
 }
 
-.scale-enter-active,
-.scale-leave-active {
-  transition: all 0.5s ease;
+.paper-reveal-enter-active,
+.paper-reveal-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-.scale-enter-from,
-.scale-leave-to {
+.paper-reveal-enter-from {
   opacity: 0;
-  transform: scale(0.9);
+  transform: translateY(10px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.paper-reveal-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 /* PWA update notification styles */
@@ -173,5 +182,22 @@ hr {
 
 .update-button:hover {
   background-color: #472b21;
+}
+
+/* Only apply focus styles when not using touch */
+@media (hover: hover) {
+  .clickable:focus {
+    filter: brightness(150%);
+    transform: scale(0.93);
+  }
+}
+
+/* For touch devices, use active state instead of focus */
+@media (hover: none) {
+  .clickable:active {
+    filter: brightness(100%);
+    transform: scale(1);
+    outline: none;
+  }
 }
 </style>
