@@ -51,7 +51,6 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import HighlightControls from './HighlightControls.vue';
 import ColorSelection from './ColorSelection.vue';
 import HighlightCollection from './HighlightCollection.vue';
-import useHighlighter from '@/composables/useHighlighter';
 import html2canvas from 'html2canvas';
 
 export default {
@@ -87,8 +86,7 @@ export default {
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-13T21:53:52Z'));
-    const userName = ref('Alessandro-Mac7');
+    const currentDate = ref(new Date('2025-05-13T21:59:38Z'));
     const exportLoading = ref(false);
 
     // Color palette
@@ -123,25 +121,240 @@ export default {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
 
-    // Import composables with needed functionality
-    const {
-      addIOSFocusFix,
-      applyHighlight,
-      cancelSelection,
-      removeHighlight,
-      clearAllHighlights,
-      loadHighlights,
-      setupSelectionListeners,
-      cleanupSelectionListeners
-    } = useHighlighter({
-      contentContainer,
-      controlBar,
-      highlightMode,
-      selectedRange,
-      highlights,
-      highlightId,
-      showColorSelection
-    });
+    // Handle text selection
+    function checkSelection() {
+      if (!highlightMode.value) return;
+
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
+
+      if (text && isSelectionWithinContent(selection)) {
+        // Save the selection range
+        selectedRange.value = selection.getRangeAt(0).cloneRange();
+        // Show color selection
+        showColorSelection.value = true;
+
+        // Make sure control bar is visible
+        setTimeout(() => {
+          scrollToControlBar();
+        }, 0);
+      }
+    }
+
+    // Check if selection is within content
+    function isSelectionWithinContent(selection) {
+      if (!selection.rangeCount) return false;
+
+      const containerEl = contentContainer.value;
+      if (!containerEl) return false;
+
+      const range = selection.getRangeAt(0);
+      return containerEl.contains(range.commonAncestorContainer);
+    }
+
+    // Scroll to control bar
+    function scrollToControlBar() {
+      if (controlBar.value) {
+        const rect = controlBar.value.getBoundingClientRect();
+
+        if (rect.bottom > window.innerHeight || rect.top < 0) {
+          controlBar.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    // Apply highlight to selected text
+    function applyHighlight(color) {
+      if (!selectedRange.value) return;
+
+      try {
+        // Create a highlight span
+        const newId = `highlight-${highlightId.value++}`;
+        const highlightSpan = document.createElement('span');
+        highlightSpan.className = 'text-highlight';
+        highlightSpan.id = newId;
+        highlightSpan.style.backgroundColor = color;
+
+        // Get the text content
+        const selectedText = selectedRange.value.toString();
+
+        // Apply the highlight
+        selectedRange.value.surroundContents(highlightSpan);
+
+        // Store the highlight
+        highlights.value.push({
+          id: newId,
+          text: selectedText,
+          color,
+          timestamp: new Date().toISOString()
+        });
+
+        // Save to localStorage
+        saveHighlights();
+
+        // Clear selection
+        window.getSelection().removeAllRanges();
+        showColorSelection.value = false;
+      } catch (error) {
+        console.error('Error applying highlight:', error);
+
+        // Try using execCommand as fallback
+        try {
+          const selection = window.getSelection();
+          const selectedText = selection.toString();
+
+          if (selectedText.trim()) {
+            const newId = `highlight-${highlightId.value++}`;
+
+            // Use execCommand
+            document.execCommand('insertHTML', false,
+                `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`);
+
+            // Store the highlight
+            highlights.value.push({
+              id: newId,
+              text: selectedText,
+              color,
+              timestamp: new Date().toISOString()
+            });
+
+            // Save to localStorage
+            saveHighlights();
+          }
+        } catch (e) {
+          console.error('Fallback highlighting failed:', e);
+
+          // Last resort: try manual DOM manipulation
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const selectedText = range.toString().trim();
+
+            if (selectedText) {
+              applyManualHighlight(selectedText, color);
+            }
+          }
+        }
+
+        // Clear selection
+        window.getSelection().removeAllRanges();
+        showColorSelection.value = false;
+      }
+    }
+
+    // Apply highlight manually (for mobile)
+    function applyManualHighlight(text, color) {
+      if (!text || !contentContainer.value) return;
+
+      const newId = `highlight-${highlightId.value++}`;
+
+      try {
+        // Find text in content
+        const html = contentContainer.value.innerHTML;
+        const safeText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${safeText})(?![^<]*>|[^<>]*</)`, 'i');
+
+        if (regex.test(html)) {
+          // Replace with highlight
+          contentContainer.value.innerHTML = html.replace(
+              regex,
+              `<span id="${newId}" class="text-highlight" style="background-color:${color};">$1</span>`
+          );
+
+          // Store highlight
+          highlights.value.push({
+            id: newId,
+            text,
+            color,
+            timestamp: new Date().toISOString()
+          });
+
+          // Save to localStorage
+          saveHighlights();
+        } else {
+          console.log('Text not found for replacement');
+        }
+      } catch (e) {
+        console.error('Manual highlighting failed:', e);
+      }
+    }
+
+    // Cancel highlight selection
+    function cancelSelection() {
+      window.getSelection().removeAllRanges();
+      selectedRange.value = null;
+      showColorSelection.value = false;
+    }
+
+    // Remove a highlight
+    function removeHighlight(index) {
+      const highlightId = highlights.value[index].id;
+
+      const highlightEl = document.getElementById(highlightId);
+      if (highlightEl) {
+        const textNode = document.createTextNode(highlightEl.textContent);
+        highlightEl.parentNode.replaceChild(textNode, highlightEl);
+      }
+
+      highlights.value.splice(index, 1);
+      saveHighlights();
+    }
+
+    // Save highlights to localStorage
+    function saveHighlights() {
+      try {
+        localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
+          highlights: highlights.value,
+          html: contentContainer.value?.innerHTML
+        }));
+      } catch (error) {
+        console.error('Error saving highlights:', error);
+      }
+    }
+
+    // Load highlights from localStorage
+    function loadHighlights() {
+      try {
+        const stored = localStorage.getItem(`highlights-${props.reference || 'page'}`);
+
+        if (stored) {
+          const data = JSON.parse(stored);
+          highlights.value = data.highlights || [];
+
+          // Update counter to avoid ID conflicts
+          if (highlights.value.length) {
+            const maxId = Math.max(...highlights.value.map(h =>
+                parseInt(h.id.replace('highlight-', '')) || 0
+            ));
+            highlightId.value = maxId + 1;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading highlights:', error);
+      }
+    }
+
+    // Clear all highlights
+    function clearAllHighlights() {
+      // Remove all highlight spans from the DOM
+      highlights.value.forEach(highlight => {
+        const highlightEl = document.getElementById(highlight.id);
+        if (highlightEl) {
+          const textNode = document.createTextNode(highlightEl.textContent);
+          highlightEl.parentNode.replaceChild(textNode, highlightEl);
+        }
+      });
+
+      // Clear the highlights array
+      highlights.value = [];
+
+      // Remove from localStorage
+      try {
+        localStorage.removeItem(`highlights-${props.reference || 'page'}`);
+      } catch (error) {
+        console.error('Error clearing highlights from storage:', error);
+      }
+    }
 
     // Export highlights as image
     async function exportHighlights() {
@@ -242,23 +455,17 @@ export default {
 
         exportContainer.appendChild(highlightsSection);
 
-        // Add footer with user and date
+        // Add footer with date
         const footer = document.createElement('div');
-        footer.style.padding = '0 20px 20px';
-        footer.style.display = 'flex';
-        footer.style.justifyContent = 'space-between';
+        footer.style.padding = '15px 20px';
+        footer.style.textAlign = 'right';
         footer.style.color = '#6e4f3a';
         footer.style.fontSize = '14px';
-
-        const userInfo = document.createElement('div');
-        userInfo.textContent = userName.value;
 
         const dateInfo = document.createElement('div');
         dateInfo.textContent = formattedDate.value;
 
-        footer.appendChild(userInfo);
         footer.appendChild(dateInfo);
-
         exportContainer.appendChild(footer);
 
         // Add to DOM temporarily but hidden
@@ -368,13 +575,60 @@ export default {
       }, 3000);
     }
 
-    onMounted(() => {
-      // Load saved highlights for the current date
-      loadHighlights(props.reference);
+    // Handle touch event for mobile
+    function handleTouchEnd() {
+      if (!highlightMode.value) return;
 
-      // Setup iOS fixes if needed
+      // Small delay to let selection complete
+      setTimeout(() => checkSelection(), 100);
+    }
+
+    // Setup selection listeners
+    function setupSelectionListeners() {
+      document.addEventListener('mouseup', checkSelection);
+
+      if (isMobileDevice()) {
+        document.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('selectionchange', function() {
+          setTimeout(() => {
+            if (highlightMode.value) {
+              const selection = window.getSelection();
+              if (selection.toString().trim()) {
+                checkSelection();
+              }
+            }
+          }, 100);
+        });
+      }
+    }
+
+    // Clean up listeners
+    function cleanupSelectionListeners() {
+      document.removeEventListener('mouseup', checkSelection);
+
+      if (isMobileDevice()) {
+        document.removeEventListener('touchend', handleTouchEnd);
+        document.removeEventListener('selectionchange', checkSelection);
+      }
+    }
+
+    onMounted(() => {
+      // Load saved highlights
+      loadHighlights();
+
+      // Add iOS specific fixes if needed
       if (isIOS()) {
-        addIOSFocusFix();
+        const style = document.createElement('style');
+        style.textContent = `
+          .highlightable-content * {
+            -webkit-user-select: text;
+            user-select: text;
+          }
+          .highlight-mode-active .highlightable-content * {
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+          }
+        `;
+        document.head.appendChild(style);
       }
 
       // Setup event listeners
@@ -390,7 +644,7 @@ export default {
     watch(() => props.currentDate, (newDate, oldDate) => {
       if (newDate !== oldDate) {
         // Clear all highlights when date changes
-        clearAllHighlights(props.reference);
+        clearAllHighlights();
 
         // Show subtle notification to user
         showDateChangeNotification();
