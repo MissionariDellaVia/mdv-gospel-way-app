@@ -1,7 +1,11 @@
 <template>
   <div class="highlighter-wrapper" :class="{'highlight-mode-active': highlightMode}">
     <!-- Content container with highlighting capability -->
-    <div ref="contentContainer" class="highlightable-content">
+    <div
+        ref="contentContainer"
+        class="highlightable-content"
+        :class="{'mobile-selection-enabled': highlightMode && isMobileDevice}"
+    >
       <slot></slot>
     </div>
 
@@ -12,6 +16,7 @@
           :highlight-mode="highlightMode"
           :has-highlights="hasHighlights"
           :highlight-count="highlights.length"
+          :is-mobile="isMobileDevice"
           @toggle-mode="toggleHighlightMode"
           @show-collection="showCollection = true"
           @export-highlights="exportHighlights"
@@ -24,6 +29,12 @@
           @apply-color="applyHighlight"
           @cancel="cancelSelection"
       />
+
+      <!-- Mobile-specific selection helper -->
+      <div v-if="highlightMode && isMobileDevice && !showColorSelection" class="mobile-selection-help">
+        <p>{{ mobileSelectionTip }}</p>
+        <button @click="checkSelectionNow" class="done-selecting-btn">Ho selezionato il testo</button>
+      </div>
     </div>
 
     <!-- Collection modal -->
@@ -79,8 +90,16 @@ export default {
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-13T20:43:28Z'));
+    const currentDate = ref(new Date('2025-05-13T20:59:03Z'));
     const userName = ref('Alessandro-Mac7');
+    const isMobileDevice = ref(false);
+
+    // Mobile selection helper text
+    const mobileSelectionTip = computed(() => {
+      return isIOS() ?
+          'Seleziona il testo usando due dita o tenendo premuto, poi clicca il pulsante sotto' :
+          'Seleziona il testo tenendo premuto, quindi clicca il pulsante sotto';
+    });
 
     // Color palette
     const highlightColors = [
@@ -106,16 +125,14 @@ export default {
 
     // Import composables with needed functionality
     const {
-      isMobile,
       isIOS,
-      addIOSFocusFix,
       applyHighlight,
       cancelSelection,
       removeHighlight,
       clearAllHighlights,
       loadHighlights,
       setupSelectionListeners,
-      cleanupSelectionListeners
+      cleanupSelectionListeners,
     } = useHighlighter({
       contentContainer,
       controlBar,
@@ -134,33 +151,45 @@ export default {
       userName
     });
 
-    // Toggle highlight mode on/off
-    function toggleHighlightMode() {
-      highlightMode.value = !highlightMode.value;
+    // Check for text selection when button is clicked
+    function checkSelectionNow() {
+      // Get current selection
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
 
-      if (!highlightMode.value) {
-        cancelSelection();
-      } else if (isMobile.value) {
-        showMobileTip();
+      if (text) {
+        // We have a selection, show the color palette
+        selectedRange.value = selection.getRangeAt(0).cloneRange();
+        showColorSelection.value = true;
+
+        // Make sure control bar is visible
+        setTimeout(() => {
+          if (controlBar.value) {
+            controlBar.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      } else {
+        // No selection, show a message
+        showNoSelectionMessage();
       }
     }
 
-    // Show tooltip for mobile users
-    function showMobileTip() {
+    function showNoSelectionMessage() {
       const toast = document.createElement('div');
-      toast.className = 'mobile-highlight-tip';
-      toast.textContent = 'Seleziona il testo tenendo premuto';
+      toast.className = 'selection-error-toast';
+      toast.textContent = 'Nessun testo selezionato. Seleziona del testo prima di procedere.';
       toast.style.position = 'fixed';
-      toast.style.bottom = '80px';
+      toast.style.bottom = '60px';
       toast.style.left = '50%';
       toast.style.transform = 'translateX(-50%)';
-      toast.style.backgroundColor = 'rgba(62, 39, 35, 0.9)';
+      toast.style.backgroundColor = 'rgba(220, 53, 69, 0.9)';
       toast.style.color = 'white';
-      toast.style.padding = '8px 16px';
-      toast.style.borderRadius = '20px';
-      toast.style.zIndex = '1000';
+      toast.style.padding = '12px 16px';
+      toast.style.borderRadius = '8px';
+      toast.style.zIndex = '2000';
       toast.style.fontSize = '14px';
-      toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+      toast.style.maxWidth = '90%';
+      toast.style.textAlign = 'center';
 
       document.body.appendChild(toast);
 
@@ -168,21 +197,58 @@ export default {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.5s';
         setTimeout(() => {
-          if (toast.parentNode) {
-            document.body.removeChild(toast);
-          }
+          if (toast.parentNode) document.body.removeChild(toast);
         }, 500);
       }, 3000);
+    }
+
+    // Toggle highlight mode on/off
+    function toggleHighlightMode() {
+      highlightMode.value = !highlightMode.value;
+
+      if (!highlightMode.value) {
+        cancelSelection();
+      } else if (isMobileDevice.value) {
+        enableMobileTextSelection();
+      }
+    }
+
+    // Enhanced mobile text selection
+    function enableMobileTextSelection() {
+      if (!contentContainer.value) return;
+
+      // For iOS we need a special approach
+      if (isIOS()) {
+        // Apply iOS-specific selection fixes
+        const styleEl = document.createElement('style');
+        styleEl.id = 'ios-selection-fix';
+        styleEl.textContent = `
+          .mobile-selection-enabled,
+          .mobile-selection-enabled * {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+            cursor: text !important;
+          }
+
+          /* Increase spacing to make selection easier */
+          .mobile-selection-enabled p {
+            line-height: 1.8 !important;
+            margin-bottom: 0.8em !important;
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
     }
 
     onMounted(() => {
       // Load saved highlights for the current date
       loadHighlights(props.reference);
 
-      // Setup iOS fixes if needed
-      if (isIOS()) {
-        addIOSFocusFix();
-      }
+      // Detect mobile device
+      isMobileDevice.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+      );
 
       // Setup event listeners
       setupSelectionListeners();
@@ -191,6 +257,12 @@ export default {
     onBeforeUnmount(() => {
       // Clean up event listeners
       cleanupSelectionListeners();
+
+      // Remove any iOS-specific styles
+      const styleEl = document.getElementById('ios-selection-fix');
+      if (styleEl) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
     });
 
     // Watch for date changes and clear highlights
@@ -244,6 +316,8 @@ export default {
       showCollection,
       highlights,
       highlightColors,
+      isMobileDevice,
+      mobileSelectionTip,
 
       // Computed
       hasHighlights,
@@ -254,7 +328,9 @@ export default {
       applyHighlight,
       cancelSelection,
       removeHighlight,
-      exportHighlights
+      exportHighlights,
+      checkSelectionNow,
+      isIOS
     };
   }
 };
@@ -281,6 +357,21 @@ export default {
   word-spacing: inherit;
   letter-spacing: inherit;
   line-height: inherit;
+}
+
+/* Mobile selection specific styles */
+.mobile-selection-enabled {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: auto !important;
+}
+
+/* Add a visual indicator when in highlight mode on mobile */
+.highlight-mode-active .mobile-selection-enabled {
+  padding: 15px !important;
+  border: 2px dashed rgba(166, 125, 81, 0.5) !important;
+  background-color: rgba(255, 250, 240, 0.5) !important;
 }
 </style>
 
@@ -313,35 +404,52 @@ export default {
   align-items: center;
 }
 
+/* Mobile selection helper */
+.mobile-selection-help {
+  width: 100%;
+  background-color: rgba(166, 125, 81, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.mobile-selection-help p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #6e4f3a;
+}
+
+.done-selecting-btn {
+  background-color: #A67D51;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.done-selecting-btn:hover,
+.done-selecting-btn:active {
+  background-color: #8c6943;
+}
+
 /* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

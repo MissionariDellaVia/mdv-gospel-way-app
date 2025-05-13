@@ -13,7 +13,6 @@ export default function useHighlighter(options) {
 
     // Device detection
     const isMobile = ref(false);
-    const lastTouchY = ref(0);
 
     // Check if the device is iOS
     function isIOS() {
@@ -33,6 +32,26 @@ export default function useHighlighter(options) {
       }
     `;
         document.head.appendChild(style);
+    }
+
+    // Enhanced selection check specifically for mobile
+    function checkSelectionOnMobile() {
+        if (!highlightMode.value) return;
+
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+
+        if (text && isSelectionWithinContent(selection)) {
+            // Save the selection range
+            selectedRange.value = selection.getRangeAt(0).cloneRange();
+            // Show color selection in the control bar
+            showColorSelection.value = true;
+
+            // Scroll to the toolbar to ensure it's visible
+            setTimeout(() => {
+                scrollToControlBar();
+            }, 100);
+        }
     }
 
     // Handle text selection
@@ -312,49 +331,35 @@ export default function useHighlighter(options) {
     // Setup all selection-related event listeners
     function setupSelectionListeners() {
         // Check if device is mobile
-        isMobile.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+        );
 
         // Setup events based on device
         document.addEventListener('mouseup', checkSelection);
         document.addEventListener('keydown', handleKeyDown);
 
-        if (isMobile.value) {
-            document.addEventListener('selectionchange', handleSelectionChange);
-            document.addEventListener('touchstart', handleTouchStart);
-            document.addEventListener('touchend', handleTouchEnd);
-        }
+        // We manage touch events directly in the component now
 
         document.addEventListener('click', handleOutsideClick);
-    }
 
-    // Handle touch events for mobile
-    function handleTouchStart(event) {
-        if (!highlightMode.value) return;
-        lastTouchY.value = event.touches[0].clientY;
-    }
-
-    function handleTouchEnd(event) {
-        if (!highlightMode.value) return;
-
-        // Avoid triggering when scrolling
-        const touchEndY = event.changedTouches[0].clientY;
-        if (Math.abs(touchEndY - lastTouchY.value) > 30) return;
-
-        // Small delay to let selection complete
-        setTimeout(() => checkSelection(event), 50);
+        // Listen for selectionchange event for both mobile and desktop
+        document.addEventListener('selectionchange', handleSelectionChange);
     }
 
     function handleSelectionChange() {
-        if (!highlightMode.value || !isMobile.value) return;
+        // This is now simplified to work for all devices
+        if (!highlightMode.value) return;
 
-        const selection = window.getSelection();
-        if (!selection.toString().trim()) {
-            // No text selected, hide toolbar after a short delay
+        // On mobile devices, check if there's a valid selection after a short delay
+        // This helps with the iOS/Android selection behavior
+        if (isMobile.value) {
             setTimeout(() => {
-                if (!window.getSelection().toString().trim()) {
-                    cancelSelection();
+                const selection = window.getSelection();
+                if (selection.toString().trim()) {
+                    checkSelectionOnMobile();
                 }
-            }, 300);
+            }, 200);
         }
     }
 
@@ -380,13 +385,7 @@ export default function useHighlighter(options) {
     function cleanupSelectionListeners() {
         document.removeEventListener('mouseup', checkSelection);
         document.removeEventListener('keydown', handleKeyDown);
-
-        if (isMobile.value) {
-            document.removeEventListener('selectionchange', handleSelectionChange);
-            document.removeEventListener('touchstart', handleTouchStart);
-            document.removeEventListener('touchend', handleTouchEnd);
-        }
-
+        document.removeEventListener('selectionchange', handleSelectionChange);
         document.removeEventListener('click', handleOutsideClick);
     }
 
@@ -394,11 +393,10 @@ export default function useHighlighter(options) {
         isMobile,
         isIOS,
         addIOSFocusFix,
-        checkSelection,
+        checkSelectionOnMobile,
         applyHighlight,
         cancelSelection,
         removeHighlight,
-        saveHighlights,
         loadHighlights,
         clearAllHighlights,
         setupSelectionListeners,

@@ -4,11 +4,11 @@
     <button
         @click="$emit('toggle-mode')"
         class="control-btn highlight-btn"
-        :class="{'active': highlightMode}"
+        :class="{'active': highlightMode, 'mobile-active': highlightMode && isMobile}"
         aria-label="Attiva/disattiva evidenziazione"
     >
       <i class="fa-solid fa-highlighter"></i>
-      <span class="control-label">Evidenzia</span>
+      <span class="control-label">{{ highlightMode && isMobile ? 'Modalità selezione' : 'Evidenzia' }}</span>
     </button>
 
     <!-- Collection button -->
@@ -50,6 +50,10 @@ export default {
     highlightCount: {
       type: Number,
       default: 0
+    },
+    isMobile: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['toggle-mode', 'show-collection', 'export-highlights']
@@ -100,6 +104,18 @@ export default {
 .highlight-btn.active {
   background-color: #A67D51;
   color: white;
+}
+
+/* Special styling for mobile highlight mode */
+.highlight-btn.mobile-active {
+  background-color: #B2A348;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(178, 163, 72, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(178, 163, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(178, 163, 72, 0); }
 }
 
 .collection-btn {
