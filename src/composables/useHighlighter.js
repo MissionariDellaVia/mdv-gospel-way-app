@@ -1,26 +1,40 @@
-import { ref } from 'vue';
-
+// No ref import needed as we don't create reactive variables here
 export default function useHighlighter(options) {
     const {
         contentContainer,
-        controlBar,
-        highlightMode,
+        // controlBar and highlightMode are in the options but unused in this composable
+        // so we don't destructure them to avoid ESLint errors
         selectedRange,
         highlights,
         highlightId,
         showColorSelection
     } = options;
 
-    // Device detection
-    const isMobile = ref(false);
-    const lastTouchY = ref(0);
+    // ====================================
+    // DEVICE DETECTION
+    // ====================================
 
-    // Check if the device is iOS
+    /**
+     * Check if the device is iOS
+     * @returns {Boolean} True if device is iOS
+     */
     function isIOS() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
 
-    // Add fix for iOS text selection
+    /**
+     * Check if the device is mobile
+     * @returns {Boolean} True if device is mobile
+     */
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+        );
+    }
+
+    /**
+     * Add iOS specific fixes for text selection
+     */
     function addIOSFocusFix() {
         const style = document.createElement('style');
         style.textContent = `
@@ -29,45 +43,21 @@ export default function useHighlighter(options) {
         user-select: text;
       }
       .highlight-mode-active .highlightable-content * {
-        -webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
       }
     `;
         document.head.appendChild(style);
     }
 
-    // Handle text selection
-    function checkSelection(event) {
-        if (!highlightMode.value) return;
+    // ====================================
+    // SELECTION METHODS
+    // ====================================
 
-        const selection = window.getSelection();
-        const text = selection.toString().trim();
-
-        if (text && isSelectionWithinContent(selection)) {
-            // Save the selection range
-            selectedRange.value = selection.getRangeAt(0).cloneRange();
-            // Show color selection in the control bar
-            showColorSelection.value = true;
-
-            // Make sure control bar is visible
-            setTimeout(() => {
-                scrollToControlBar();
-            }, 0);
-        } else if (
-            // Don't hide when clicking inside the color selection area
-            !(event && event.target && (
-                event.target.closest('.color-selection-bar') ||
-                event.target.closest('.color-btn') ||
-                event.target.closest('.action-btn')
-            ))
-        ) {
-            // Hide the color selection for clicks elsewhere
-            if (event && event.type === 'click') {
-                cancelSelection();
-            }
-        }
-    }
-
-    // Check if selection is within the content container
+    /**
+     * Check if selection is within content container
+     * @param {Selection} selection The current selection
+     * @returns {Boolean} True if selection is within content
+     */
     function isSelectionWithinContent(selection) {
         if (!selection.rangeCount) return false;
 
@@ -78,154 +68,155 @@ export default function useHighlighter(options) {
         return containerEl.contains(range.commonAncestorContainer);
     }
 
-    // Scroll to ensure control bar is visible
-    function scrollToControlBar() {
-        if (controlBar.value) {
-            const rect = controlBar.value.getBoundingClientRect();
-
-            // If control bar is out of viewport, scroll to it
-            if (rect.bottom > window.innerHeight || rect.top < 0) {
-                controlBar.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
+    /**
+     * Cancel the current selection
+     */
+    function cancelSelection() {
+        window.getSelection().removeAllRanges();
+        selectedRange.value = null;
+        showColorSelection.value = false;
     }
 
-    // Apply highlight to the selected text
+    // ====================================
+    // HIGHLIGHTING METHODS
+    // ====================================
+
+    /**
+     * Apply highlight to selected text
+     * @param {String} color Background color for highlight
+     */
     function applyHighlight(color) {
         if (!selectedRange.value) return;
 
+        try {
+            // Primary approach: use Range API
+            applyHighlightWithRange(color);
+        } catch (error) {
+            console.error('Error applying highlight with Range API:', error);
+
+            try {
+                // Secondary approach: use execCommand
+                applyHighlightWithExecCommand(color);
+            } catch (e) {
+                console.error('Error applying highlight with execCommand:', e);
+
+                // Last resort: try manual DOM manipulation
+                applyHighlightManually(color);
+            }
+        }
+
+        // Clear selection state
+        window.getSelection().removeAllRanges();
+        showColorSelection.value = false;
+    }
+
+    /**
+     * Apply highlight using the Range API
+     * @param {String} color Background color for highlight
+     */
+    function applyHighlightWithRange(color) {
+        // Create a highlight span
+        const newId = `highlight-${highlightId.value++}`;
+        const highlightSpan = document.createElement('span');
+        highlightSpan.className = 'text-highlight';
+        highlightSpan.id = newId;
+        highlightSpan.style.backgroundColor = color;
+
+        // Get the text content
+        const selectedText = selectedRange.value.toString();
+
+        // Apply the highlight
+        selectedRange.value.surroundContents(highlightSpan);
+
+        // Store the highlight
+        storeHighlight(newId, selectedText, color);
+    }
+
+    /**
+     * Apply highlight using execCommand as fallback
+     * @param {String} color Background color for highlight
+     */
+    function applyHighlightWithExecCommand(color) {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+
+        if (!selectedText) return;
+
+        const newId = `highlight-${highlightId.value++}`;
+
+        // Use execCommand to insert HTML
+        document.execCommand(
+            'insertHTML',
+            false,
+            `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`
+        );
+
+        // Store the highlight
+        storeHighlight(newId, selectedText, color);
+    }
+
+    /**
+     * Apply highlight using manual DOM manipulation
+     * @param {String} color Background color for highlight
+     */
+    function applyHighlightManually(color) {
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
 
-        // Create a highlight span - avoid name conflict
-        const newElementId = `highlight-${highlightId.value++}`;
-        const highlightSpan = document.createElement('span');
-        highlightSpan.className = 'text-highlight';
-        highlightSpan.id = newElementId;
-        highlightSpan.style.backgroundColor = color;
+        const range = selection.getRangeAt(0);
+        const selectedText = range.toString().trim();
+
+        if (!selectedText || !contentContainer.value) return;
+
+        const newId = `highlight-${highlightId.value++}`;
 
         try {
-            // Apply the highlight
-            selectedRange.value.surroundContents(highlightSpan);
+            // Find text in content using regex
+            const html = contentContainer.value.innerHTML;
+            const safeText = selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${safeText})(?![^<]*>|[^<>]*</)`, 'i');
 
-            // Store the highlight info
-            highlights.value.push({
-                id: newElementId,
-                text: selectedRange.value.toString(),
-                color,
-                timestamp: new Date().toISOString()
-            });
+            if (regex.test(html)) {
+                // Replace with highlight
+                contentContainer.value.innerHTML = html.replace(
+                    regex,
+                    `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`
+                );
 
-            // Save highlights
-            saveHighlights();
-
-            // Clear selection and hide color picker
-            window.getSelection().removeAllRanges();
-            cancelSelection();
-        } catch (error) {
-            console.error('Error applying highlight:', error);
-            handleComplexSelection(color);
-        }
-    }
-
-    // Handle complex selection (spanning multiple nodes)
-    function handleComplexSelection(color) {
-        const selectionText = window.getSelection().toString();
-        const tempId = 'temp-selection-' + Date.now();
-
-        if (isIOS()) {
-            applyHighlightToRangeAsParts(color, selectionText);
-        } else {
-            try {
-                document.execCommand('insertHTML', false,
-                    `<span id="${tempId}" class="text-highlight" style="background-color:${color};">${selectionText}</span>`);
-
-                const tempEl = document.getElementById(tempId);
-                if (tempEl) {
-                    const newElementId = `highlight-${highlightId.value++}`;
-                    tempEl.id = newElementId;
-
-                    highlights.value.push({
-                        id: newElementId,
-                        text: selectionText,
-                        color,
-                        timestamp: new Date().toISOString()
-                    });
-
-                    saveHighlights();
-                }
-            } catch (e) {
-                console.error('Failed to apply complex highlight', e);
+                // Store highlight
+                storeHighlight(newId, selectedText, color);
+            } else {
+                console.log('Text not found for replacement');
                 showHighlightError();
             }
-        }
-
-        window.getSelection().removeAllRanges();
-        cancelSelection();
-    }
-
-    // Apply highlight to range as separate parts (for iOS)
-    function applyHighlightToRangeAsParts(color, selectionText) {
-        const tempWrapper = document.createElement('div');
-        tempWrapper.className = 'temp-highlight-wrapper';
-        tempWrapper.style.display = 'none';
-        document.body.appendChild(tempWrapper);
-        tempWrapper.innerText = selectionText;
-
-        const newElementId = `highlight-${highlightId.value++}`;
-
-        try {
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
-
-            const highlightSpan = document.createElement('span');
-            highlightSpan.className = 'text-highlight';
-            highlightSpan.id = newElementId;
-            highlightSpan.style.backgroundColor = color;
-            highlightSpan.innerText = selectionText;
-
-            range.deleteContents();
-            range.insertNode(highlightSpan);
-
-            highlights.value.push({
-                id: newElementId,
-                text: selectionText,
-                color,
-                timestamp: new Date().toISOString()
-            });
-
-            saveHighlights();
         } catch (e) {
-            console.error('iOS highlight fallback failed', e);
+            console.error('Manual highlighting failed:', e);
             showHighlightError();
-        } finally {
-            document.body.removeChild(tempWrapper);
         }
     }
 
-    // Clear all highlights
-    function clearAllHighlights(reference = '') {
-        // Remove all highlight spans from the DOM
-        highlights.value.forEach(highlight => {
-            const highlightEl = document.getElementById(highlight.id);
-            if (highlightEl) {
-                const textNode = document.createTextNode(highlightEl.textContent);
-                highlightEl.parentNode.replaceChild(textNode, highlightEl);
-            }
+    /**
+     * Store highlight in the highlights array and localStorage
+     * @param {String} id Unique ID for the highlight
+     * @param {String} text Highlighted text content
+     * @param {String} color Background color
+     */
+    function storeHighlight(id, text, color) {
+        // Add to highlights array
+        highlights.value.push({
+            id,
+            text,
+            color,
+            timestamp: new Date().toISOString()
         });
 
-        // Clear the highlights array
-        highlights.value = [];
-
-        // Remove from localStorage
-        try {
-            localStorage.removeItem(`highlights-${reference || 'page'}`);
-        } catch (error) {
-            console.error('Error clearing highlights from storage:', error);
-        }
+        // Save to localStorage
+        saveHighlights();
     }
 
-    // Show an error message when highlighting fails
+    /**
+     * Show error message when highlighting fails
+     */
     function showHighlightError() {
         const toast = document.createElement('div');
         toast.className = 'highlight-error';
@@ -254,28 +245,33 @@ export default function useHighlighter(options) {
         }, 3000);
     }
 
-    // Cancel selection and hide color selection
-    function cancelSelection() {
-        window.getSelection().removeAllRanges();
-        selectedRange.value = null;
-        showColorSelection.value = false;
-    }
-
-    // Remove a highlight by index
+    /**
+     * Remove a highlight by index
+     * @param {Number} index Index of highlight to remove
+     */
     function removeHighlight(index) {
         const highlightId = highlights.value[index].id;
 
+        // Remove highlight from DOM
         const highlightEl = document.getElementById(highlightId);
         if (highlightEl) {
             const textNode = document.createTextNode(highlightEl.textContent);
             highlightEl.parentNode.replaceChild(textNode, highlightEl);
         }
 
+        // Remove from data
         highlights.value.splice(index, 1);
         saveHighlights();
     }
 
-    // Save highlights to localStorage
+    // ====================================
+    // STORAGE METHODS
+    // ====================================
+
+    /**
+     * Save highlights to localStorage
+     * @param {String} reference Optional reference identifier
+     */
     function saveHighlights(reference = '') {
         try {
             localStorage.setItem(`highlights-${reference || 'page'}`, JSON.stringify({
@@ -287,7 +283,10 @@ export default function useHighlighter(options) {
         }
     }
 
-    // Load highlights from localStorage
+    /**
+     * Load highlights from localStorage
+     * @param {String} reference Optional reference identifier
+     */
     function loadHighlights(reference = '') {
         try {
             const stored = localStorage.getItem(`highlights-${reference || 'page'}`);
@@ -296,7 +295,7 @@ export default function useHighlighter(options) {
                 const data = JSON.parse(stored);
                 highlights.value = data.highlights || [];
 
-                // Update the counter to avoid ID conflicts
+                // Update counter to avoid ID conflicts
                 if (highlights.value.length) {
                     const maxId = Math.max(...highlights.value.map(h =>
                         parseInt(h.id.replace('highlight-', '')) || 0
@@ -309,106 +308,48 @@ export default function useHighlighter(options) {
         }
     }
 
-    // Handle touch events for mobile
-    function handleTouchStart(event) {
-        if (!highlightMode.value) return;
-        lastTouchY.value = event.touches[0].clientY;
-    }
-
-    function handleTouchEnd(event) {
-        if (!highlightMode.value) return;
-
-        // Avoid triggering when scrolling
-        const touchEndY = event.changedTouches[0].clientY;
-        if (Math.abs(touchEndY - lastTouchY.value) > 30) return;
-
-        // Small delay to let selection complete
-        setTimeout(() => checkSelection(event), 50);
-    }
-
-    function handleSelectionChange() {
-        if (!highlightMode.value) return;
-
-        // Only apply this logic on mobile
-        if (isMobile.value) {
-            const selection = window.getSelection();
-            if (!selection.toString().trim()) {
-                // No text selected, hide toolbar after a short delay
-                setTimeout(() => {
-                    if (!window.getSelection().toString().trim()) {
-                        cancelSelection();
-                    }
-                }, 300);
-            } else {
-                // Text is selected, check if it's within our content
-                checkSelection();
+    /**
+     * Clear all highlights
+     * @param {String} reference Optional reference identifier
+     */
+    function clearAllHighlights(reference = '') {
+        // Remove all highlight spans from the DOM
+        highlights.value.forEach(highlight => {
+            const highlightEl = document.getElementById(highlight.id);
+            if (highlightEl) {
+                const textNode = document.createTextNode(highlightEl.textContent);
+                highlightEl.parentNode.replaceChild(textNode, highlightEl);
             }
+        });
+
+        // Clear the highlights array
+        highlights.value = [];
+
+        // Remove from localStorage
+        try {
+            localStorage.removeItem(`highlights-${reference || 'page'}`);
+        } catch (error) {
+            console.error('Error clearing highlights from storage:', error);
         }
-    }
-
-    // Handle key events (escape to cancel)
-    function handleKeyDown(event) {
-        if (event.key === 'Escape' && showColorSelection.value) {
-            cancelSelection();
-        }
-    }
-
-    // Handle clicks outside the color selection area
-    function handleOutsideClick(event) {
-        if (showColorSelection.value &&
-            controlBar.value &&
-            !controlBar.value.contains(event.target) &&
-            contentContainer.value &&
-            !contentContainer.value.contains(event.target)) {
-            cancelSelection();
-        }
-    }
-
-    // Setup all selection-related event listeners
-    function setupSelectionListeners() {
-        // Check if device is mobile
-        isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-        );
-
-        // Setup events based on device
-        document.addEventListener('mouseup', checkSelection);
-        document.addEventListener('keydown', handleKeyDown);
-
-        if (isMobile.value) {
-            document.addEventListener('selectionchange', handleSelectionChange);
-            document.addEventListener('touchstart', handleTouchStart);
-            document.addEventListener('touchend', handleTouchEnd);
-        }
-
-        document.addEventListener('click', handleOutsideClick);
-    }
-
-    // Clean up all event listeners
-    function cleanupSelectionListeners() {
-        document.removeEventListener('mouseup', checkSelection);
-        document.removeEventListener('keydown', handleKeyDown);
-
-        if (isMobile.value) {
-            document.removeEventListener('selectionchange', handleSelectionChange);
-            document.removeEventListener('touchstart', handleTouchStart);
-            document.removeEventListener('touchend', handleTouchEnd);
-        }
-
-        document.removeEventListener('click', handleOutsideClick);
     }
 
     return {
-        isMobile,
+        // Device detection
         isIOS,
+        isMobile,
         addIOSFocusFix,
-        checkSelection,
-        applyHighlight,
+
+        // Selection methods
+        isSelectionWithinContent,
         cancelSelection,
+
+        // Highlighting methods
+        applyHighlight,
         removeHighlight,
+
+        // Storage methods
+        saveHighlights,
         loadHighlights,
-        clearAllHighlights,
-        setupSelectionListeners,
-        cleanupSelectionListeners
+        clearAllHighlights
     };
 }

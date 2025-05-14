@@ -61,7 +61,8 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import HighlightControls from './HighlightControls.vue';
 import ColorSelection from './ColorSelection.vue';
 import HighlightCollection from './HighlightCollection.vue';
-import html2canvas from 'html2canvas';
+import useHighlighter from '@/composables/useHighlighter';
+import useExporter from '@/composables/useExporter';
 
 export default {
   name: 'TextHighlighter',
@@ -82,6 +83,10 @@ export default {
     currentDate: {
       type: [Date, String],
       required: true
+    },
+    textRef: {
+      type: String,
+      required: true
     }
   },
   setup(props) {
@@ -97,7 +102,7 @@ export default {
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-14T09:19:19Z'));
+    const currentDate = ref(new Date('2025-05-14T09:29:08Z'));
     const exportLoading = ref(false);
     const isMobile = ref(false);
     const showMobileConfirm = ref(false);
@@ -125,21 +130,33 @@ export default {
     });
 
     // ====================================
-    // DEVICE DETECTION
+    // COMPOSABLES
     // ====================================
-    function detectMobileDevice() {
-      isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-      );
-      return isMobile.value;
-    }
+    const highlighter = useHighlighter({
+      contentContainer,
+      controlBar,
+      highlightMode,
+      selectedRange,
+      highlights,
+      highlightId,
+      showColorSelection
+    });
 
-    function isIOS() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
+    const exporter = useExporter({
+      highlights,
+      title: props.title,
+      reference: props.reference,
+      formattedDate,
+      organization: 'La Via del Vangelo dei Missionari e Missionarie della Via'
+    });
+
+    // Watch loading state from exporter
+    watch(() => exporter.isExportLoading.value, (loading) => {
+      exportLoading.value = loading;
+    });
 
     // ====================================
-    // TEXT SELECTION HANDLING
+    // MOBILE SELECTION HANDLING
     // ====================================
     function checkSelection(event) {
       if (!highlightMode.value) return;
@@ -147,7 +164,7 @@ export default {
       const selection = window.getSelection();
       const text = selection.toString().trim();
 
-      if (text && isSelectionWithinContent(selection)) {
+      if (text && highlighter.isSelectionWithinContent(selection)) {
         // Save the selection range
         selectedRange.value = selection.getRangeAt(0).cloneRange();
 
@@ -187,16 +204,6 @@ export default {
       }
     }
 
-    function isSelectionWithinContent(selection) {
-      if (!selection.rangeCount) return false;
-
-      const containerEl = contentContainer.value;
-      if (!containerEl) return false;
-
-      const range = selection.getRangeAt(0);
-      return containerEl.contains(range.commonAncestorContainer);
-    }
-
     function scrollToControlBar() {
       if (controlBar.value) {
         const rect = controlBar.value.getBoundingClientRect();
@@ -208,439 +215,27 @@ export default {
     }
 
     // ====================================
-    // HIGHLIGHTING FUNCTIONS
+    // HIGHLIGHT METHODS
     // ====================================
     function applyHighlight(color) {
-      if (!selectedRange.value) return;
-
-      try {
-        // Primary approach: use Range API
-        applyHighlightWithRange(color);
-      } catch (error) {
-        console.error('Error applying highlight with Range API:', error);
-
-        try {
-          // Secondary approach: use execCommand
-          applyHighlightWithExecCommand(color);
-        } catch (e) {
-          console.error('Error applying highlight with execCommand:', e);
-
-          // Last resort: try manual DOM manipulation
-          applyHighlightManually(color);
-        }
-      }
-
-      // Clear selection state
-      window.getSelection().removeAllRanges();
-      showColorSelection.value = false;
+      highlighter.applyHighlight(color);
       showMobileConfirm.value = false;
     }
 
-    function applyHighlightWithRange(color) {
-      // Create a highlight span
-      const newId = `highlight-${highlightId.value++}`;
-      const highlightSpan = document.createElement('span');
-      highlightSpan.className = 'text-highlight';
-      highlightSpan.id = newId;
-      highlightSpan.style.backgroundColor = color;
-
-      // Get the text content
-      const selectedText = selectedRange.value.toString();
-
-      // Apply the highlight
-      selectedRange.value.surroundContents(highlightSpan);
-
-      // Store the highlight
-      storeHighlight(newId, selectedText, color);
-    }
-
-    function applyHighlightWithExecCommand(color) {
-      const selection = window.getSelection();
-      const selectedText = selection.toString().trim();
-
-      if (!selectedText) return;
-
-      const newId = `highlight-${highlightId.value++}`;
-
-      // Use execCommand to insert HTML
-      document.execCommand(
-          'insertHTML',
-          false,
-          `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`
-      );
-
-      // Store the highlight
-      storeHighlight(newId, selectedText, color);
-    }
-
-    function applyHighlightManually(color) {
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-
-      const range = selection.getRangeAt(0);
-      const selectedText = range.toString().trim();
-
-      if (!selectedText || !contentContainer.value) return;
-
-      const newId = `highlight-${highlightId.value++}`;
-
-      try {
-        // Find text in content using regex
-        const html = contentContainer.value.innerHTML;
-        const safeText = selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${safeText})(?![^<]*>|[^<>]*</)`, 'i');
-
-        if (regex.test(html)) {
-          // Replace with highlight
-          contentContainer.value.innerHTML = html.replace(
-              regex,
-              `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`
-          );
-
-          // Store highlight
-          storeHighlight(newId, selectedText, color);
-        }
-      } catch (e) {
-        console.error('Manual highlighting failed:', e);
-        showHighlightError();
-      }
-    }
-
-    function storeHighlight(id, text, color) {
-      // Add to highlights array
-      highlights.value.push({
-        id,
-        text,
-        color,
-        timestamp: new Date().toISOString()
-      });
-
-      // Save to localStorage
-      saveHighlights();
-    }
-
-    function showHighlightError() {
-      const toast = document.createElement('div');
-      toast.className = 'highlight-error';
-      toast.textContent = 'Impossibile evidenziare questo testo. Prova a selezionare un testo più breve.';
-      toast.style.position = 'fixed';
-      toast.style.top = '50%';
-      toast.style.left = '50%';
-      toast.style.transform = 'translate(-50%, -50%)';
-      toast.style.backgroundColor = 'rgba(220, 53, 69, 0.9)';
-      toast.style.color = 'white';
-      toast.style.padding = '12px 20px';
-      toast.style.borderRadius = '8px';
-      toast.style.zIndex = '2000';
-      toast.style.fontSize = '14px';
-      toast.style.maxWidth = '90%';
-      toast.style.textAlign = 'center';
-
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.5s';
-        setTimeout(() => {
-          if (toast.parentNode) document.body.removeChild(toast);
-        }, 500);
-      }, 3000);
-    }
-
     function cancelSelection() {
-      window.getSelection().removeAllRanges();
-      selectedRange.value = null;
-      showColorSelection.value = false;
+      highlighter.cancelSelection();
       showMobileConfirm.value = false;
     }
 
     function removeHighlight(index) {
-      const highlightId = highlights.value[index].id;
-
-      // Remove highlight from DOM
-      const highlightEl = document.getElementById(highlightId);
-      if (highlightEl) {
-        const textNode = document.createTextNode(highlightEl.textContent);
-        highlightEl.parentNode.replaceChild(textNode, highlightEl);
-      }
-
-      // Remove from data
-      highlights.value.splice(index, 1);
-      saveHighlights();
+      highlighter.removeHighlight(index);
     }
 
-    // ====================================
-    // STORAGE FUNCTIONS
-    // ====================================
-    function saveHighlights() {
-      try {
-        localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
-          highlights: highlights.value,
-          html: contentContainer.value?.innerHTML
-        }));
-      } catch (error) {
-        console.error('Error saving highlights:', error);
-      }
-    }
-
-    function loadHighlights() {
-      try {
-        const stored = localStorage.getItem(`highlights-${props.reference || 'page'}`);
-
-        if (stored) {
-          const data = JSON.parse(stored);
-          highlights.value = data.highlights || [];
-
-          // Update counter to avoid ID conflicts
-          if (highlights.value.length) {
-            const maxId = Math.max(...highlights.value.map(h =>
-                parseInt(h.id.replace('highlight-', '')) || 0
-            ));
-            highlightId.value = maxId + 1;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading highlights:', error);
-      }
-    }
-
-    function clearAllHighlights() {
-      // Remove all highlight spans from the DOM
-      highlights.value.forEach(highlight => {
-        const highlightEl = document.getElementById(highlight.id);
-        if (highlightEl) {
-          const textNode = document.createTextNode(highlightEl.textContent);
-          highlightEl.parentNode.replaceChild(textNode, highlightEl);
-        }
-      });
-
-      // Clear the highlights array
-      highlights.value = [];
-
-      // Remove from localStorage
-      try {
-        localStorage.removeItem(`highlights-${props.reference || 'page'}`);
-      } catch (error) {
-        console.error('Error clearing highlights from storage:', error);
-      }
-    }
-
-    // ====================================
-    // EXPORT FUNCTIONS
-    // ====================================
-    async function exportHighlights() {
-      if (!hasHighlights.value) return;
-
+    function exportHighlights() {
+      exporter.exportHighlights(isMobile.value);
       showCollection.value = false;
-      exportLoading.value = true;
-
-      try {
-        const exportContainer = createExportContainer();
-        document.body.appendChild(exportContainer);
-
-        // Short delay to ensure everything renders properly
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Generate canvas with html2canvas
-        const canvas = await html2canvas(exportContainer, {
-          backgroundColor: '#fff',
-          scale: 2, // Higher quality
-          useCORS: true,
-          allowTaint: true,
-          logging: false
-        });
-
-        // Convert to image
-        const imgData = canvas.toDataURL('image/png');
-
-        // Clean up the container
-        document.body.removeChild(exportContainer);
-
-        // Share or download based on platform
-        if (isMobile.value && navigator.share) {
-          await shareImage(imgData);
-        } else {
-          downloadImage(imgData);
-        }
-      } catch (error) {
-        console.error('Error exporting highlights:', error);
-        alert('Si è verificato un errore durante l\'esportazione. Riprova più tardi.');
-      } finally {
-        exportLoading.value = false;
-      }
     }
 
-    function createExportContainer() {
-      // Create export container
-      const container = document.createElement('div');
-      container.className = 'highlight-export-container';
-      container.style.width = '90%';
-      container.style.maxWidth = '750px';
-      container.style.padding = '0';
-      container.style.margin = '0 auto';
-      container.style.backgroundColor = 'white';
-      container.style.fontFamily = '"Barlow Semi Condensed", sans-serif';
-      container.style.color = '#281D02';
-      container.style.borderRadius = '12px';
-      container.style.overflow = 'hidden';
-      container.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-
-      // Add header
-      const header = createExportHeader();
-      container.appendChild(header);
-
-      // Add highlights
-      const highlightsSection = createExportHighlightsSection();
-      container.appendChild(highlightsSection);
-
-      // Add footer
-      const footer = createExportFooter();
-      container.appendChild(footer);
-
-      return container;
-    }
-
-    function createExportHeader() {
-      const header = document.createElement('div');
-      header.style.padding = '20px';
-      header.style.background = 'linear-gradient(to right, #6e4f3a, #A67D51)';
-      header.style.color = 'white';
-      header.style.display = 'flex';
-      header.style.alignItems = 'center';
-
-      const titleDiv = document.createElement('div');
-
-      const titleH2 = document.createElement('h2');
-      titleH2.style.margin = '0';
-      titleH2.style.fontSize = '22px';
-      titleH2.textContent = props.title;
-
-      const subtitleP = document.createElement('p');
-      subtitleP.style.margin = '5px 0 0';
-      subtitleP.style.opacity = '0.9';
-      subtitleP.style.fontSize = '16px';
-      subtitleP.textContent = props.reference || 'Evidenziazioni';
-
-      titleDiv.appendChild(titleH2);
-      titleDiv.appendChild(subtitleP);
-      header.appendChild(titleDiv);
-
-      return header;
-    }
-
-    function createExportHighlightsSection() {
-      const section = document.createElement('div');
-      section.style.padding = '20px';
-
-      highlights.value.forEach(highlight => {
-        const item = document.createElement('div');
-        item.style.display = 'flex';
-        item.style.marginBottom = '15px';
-        item.style.paddingBottom = '15px';
-        item.style.borderBottom = '1px solid rgba(166, 125, 81, 0.2)';
-
-        const colorBar = document.createElement('div');
-        colorBar.style.width = '5px';
-        colorBar.style.flexShrink = '0';
-        colorBar.style.borderRadius = '3px';
-        colorBar.style.marginRight = '15px';
-        colorBar.style.backgroundColor = highlight.color;
-
-        const textContent = document.createElement('div');
-        textContent.style.flex = '1';
-        textContent.style.fontSize = '16px';
-        textContent.style.lineHeight = '1.5';
-        textContent.style.color = '#3e2723';
-
-        const openQuote = document.createElement('span');
-        openQuote.style.fontSize = '20px';
-        openQuote.style.color = '#A67D51';
-        openQuote.style.fontFamily = 'Georgia, serif';
-        openQuote.textContent = '"';
-
-        const textSpan = document.createElement('span');
-        textSpan.textContent = highlight.text;
-
-        const closeQuote = document.createElement('span');
-        closeQuote.style.fontSize = '20px';
-        closeQuote.style.color = '#A67D51';
-        closeQuote.style.fontFamily = 'Georgia, serif';
-        closeQuote.textContent = '"';
-
-        textContent.appendChild(openQuote);
-        textContent.appendChild(textSpan);
-        textContent.appendChild(closeQuote);
-
-        item.appendChild(colorBar);
-        item.appendChild(textContent);
-
-        section.appendChild(item);
-      });
-
-      return section;
-    }
-
-    function createExportFooter() {
-      const footer = document.createElement('div');
-      footer.style.padding = '15px 20px';
-      footer.style.display = 'flex';
-      footer.style.justifyContent = 'space-between';
-      footer.style.color = '#6e4f3a';
-      footer.style.fontSize = '14px';
-
-      const userInfo = document.createElement('div');
-      userInfo.textContent = 'Alessandro-Mac7';
-
-      const dateInfo = document.createElement('div');
-      dateInfo.textContent = formattedDate.value;
-
-      footer.appendChild(userInfo);
-      footer.appendChild(dateInfo);
-
-      return footer;
-    }
-
-    async function shareImage(imgData) {
-      try {
-        const blob = await (await fetch(imgData)).blob();
-        const file = new File(
-            [blob],
-            `evidenziazioni-${props.reference || 'vangelo'}.png`,
-            { type: 'image/png' }
-        );
-
-        await navigator.share({
-          files: [file],
-          title: 'Le mie evidenziazioni',
-          text: 'Evidenziazioni da La Via del Vangelo'
-        });
-      } catch (err) {
-        console.error('Error sharing', err);
-        downloadImage(imgData);
-      }
-    }
-
-    function downloadImage(imgData) {
-      const link = document.createElement('a');
-      const filename = `evidenziazioni-${
-          props.reference ? props.reference.replace(/\s+/g, '-').toLowerCase() : 'vangelo'
-      }-${new Date().toISOString().split('T')[0]}.png`;
-
-      link.download = filename;
-      link.href = imgData;
-      link.style.display = 'none';
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // ====================================
-    // UI FUNCTIONS
-    // ====================================
     function toggleHighlightMode() {
       highlightMode.value = !highlightMode.value;
 
@@ -651,6 +246,9 @@ export default {
       }
     }
 
+    // ====================================
+    // UI NOTIFICATION HELPERS
+    // ====================================
     function showMobileTip() {
       const toast = document.createElement('div');
       toast.className = 'mobile-highlight-tip';
@@ -753,24 +351,14 @@ export default {
     // ====================================
     onMounted(() => {
       // Detect mobile device
-      detectMobileDevice();
+      isMobile.value = highlighter.isMobile();
 
       // Load saved highlights
-      loadHighlights();
+      highlighter.loadHighlights(props.reference);
 
       // Add iOS specific fixes if needed
-      if (isIOS()) {
-        const style = document.createElement('style');
-        style.textContent = `
-          .highlightable-content * {
-            -webkit-user-select: text;
-            user-select: text;
-          }
-          .highlight-mode-active .highlightable-content * {
-            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-          }
-        `;
-        document.head.appendChild(style);
+      if (highlighter.isIOS()) {
+        highlighter.addIOSFocusFix();
       }
 
       // Setup event listeners
@@ -786,7 +374,7 @@ export default {
     watch(() => props.currentDate, (newDate, oldDate) => {
       if (newDate !== oldDate) {
         // Clear all highlights when date changes
-        clearAllHighlights();
+        highlighter.clearAllHighlights(props.reference);
 
         // Show subtle notification to user
         showDateChangeNotification();

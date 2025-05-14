@@ -4,6 +4,8 @@
     <text-highlighter
         :title="'Dal vangelo secondo ' + evangelist"
         :reference="evangelist"
+        :current-date="textDate"
+        :textRef="textRef"
     >
       <gw-raw-text
           :title="'Dal vangelo secondo ' + evangelist"
@@ -17,6 +19,8 @@
     <text-highlighter
         title="Commento al Vangelo"
         reference="Commento"
+        :current-date="textDate"
+        :textRef="textRef"
     >
       <gw-raw-text
           title="Commento al Vangelo"
@@ -30,7 +34,8 @@
     <text-highlighter
         v-if="extra"
         reference="Extra"
-    >
+        :current-date="textDate"
+        :textRef="textRef">
       <gw-raw-text
           :text="extra"
           :zoomLevel="zoomLevel"
@@ -48,8 +53,10 @@ import { defineProps } from 'vue'
 
 defineProps({
   evangelist: String,
+  textRef: String,
   gospel: String,
   comment: String,
+  textDate: String,
   extra: String,
   showDivider: Boolean,
   zoomLevel: {

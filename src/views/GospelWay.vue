@@ -65,8 +65,10 @@
 
       <gw-gospel-text
           :evangelist="currentGospelWay.evangelist"
+          :textRef="currentGospelWay.textRef"
           :gospel="currentGospelWay.text"
           :comment="currentGospelWay.comment"
+          :textDate="textDate"
           :extra="currentGospelWay.video ? null : currentGospelWay.extra"
           :clean="true"
           :show-divider="true"
