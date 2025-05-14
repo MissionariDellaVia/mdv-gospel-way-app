@@ -43,8 +43,26 @@
         :formatted-date="formattedDate"
         @close="showCollection = false"
         @remove="removeHighlight"
-        @export="exportHighlights"
+        @export="showExportOptions"
     />
+
+    <!-- Export options dialog -->
+    <div v-if="showExportDialog" class="export-dialog">
+      <div class="export-dialog-content">
+        <h3>Scegli il formato</h3>
+        <div class="export-options">
+          <button @click="exportAsImage" class="export-option-btn">
+            <i class="fa-solid fa-image"></i> Immagine
+          </button>
+          <button @click="exportAsText" class="export-option-btn">
+            <i class="fa-solid fa-file-alt"></i> Testo
+          </button>
+        </div>
+        <button @click="showExportDialog = false" class="export-dialog-close">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    </div>
 
     <!-- Export loading overlay -->
     <div v-if="exportLoading" class="export-overlay">
@@ -57,7 +75,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import HighlightControls from './HighlightControls.vue';
 import ColorSelection from './ColorSelection.vue';
 import HighlightCollection from './HighlightCollection.vue';
@@ -86,7 +104,7 @@ export default {
     },
     textRef: {
       type: String,
-      required: true
+      default: ''
     }
   },
   setup(props) {
@@ -99,10 +117,10 @@ export default {
     const highlightMode = ref(false);
     const showColorSelection = ref(false);
     const showCollection = ref(false);
+    const showExportDialog = ref(false);
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-14T09:29:08Z'));
     const exportLoading = ref(false);
     const isMobile = ref(false);
     const showMobileConfirm = ref(false);
@@ -116,8 +134,7 @@ export default {
       { name: 'Viola', value: 'rgba(187, 107, 217, 0.35)' }
     ];
 
-    // Computed properties
-    const hasHighlights = computed(() => highlights.value.length > 0);
+    // Formatted date for UI display
     const formattedDate = computed(() => {
       const options = {
         year: 'numeric',
@@ -126,8 +143,11 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       };
-      return currentDate.value.toLocaleDateString('it-IT', options);
+      return new Date().toLocaleDateString('it-IT', options);
     });
+
+    // Computed properties
+    const hasHighlights = computed(() => highlights.value.length > 0);
 
     // ====================================
     // COMPOSABLES
@@ -144,15 +164,22 @@ export default {
 
     const exporter = useExporter({
       highlights,
-      title: props.title,
-      reference: props.reference,
+      title: 'Vangelo del Giorno',
+      reference: props.textRef || props.reference,
       formattedDate,
-      organization: 'La Via del Vangelo dei Missionari e Missionarie della Via'
+      organization: 'La Via del Vangelo a cura dei Missionari e Missionarie della Via'
     });
 
     // Watch loading state from exporter
     watch(() => exporter.isExportLoading.value, (loading) => {
       exportLoading.value = loading;
+    });
+
+    // Update reference when textRef changes
+    watch(() => props.textRef, (newRef) => {
+      if (exporter.updateReference) {
+        exporter.updateReference(newRef || props.reference);
+      }
     });
 
     // ====================================
@@ -184,7 +211,8 @@ export default {
         const target = event?.target;
         const isInsideUIElement = target && (
             target.closest('.color-selection-bar') ||
-            target.closest('.mobile-confirm-selection')
+            target.closest('.mobile-confirm-selection') ||
+            target.closest('.export-dialog')
         );
 
         if (!isInsideUIElement) {
@@ -231,9 +259,28 @@ export default {
       highlighter.removeHighlight(index);
     }
 
-    function exportHighlights() {
-      exporter.exportHighlights(isMobile.value);
+    // ====================================
+    // EXPORT METHODS
+    // ====================================
+    function showExportOptions() {
+      showExportDialog.value = true;
+    }
+
+    function exportAsImage() {
+      showExportDialog.value = false;
       showCollection.value = false;
+      exporter.exportAsImage(isMobile.value);
+    }
+
+    function exportAsText() {
+      showExportDialog.value = false;
+      showCollection.value = false;
+      exporter.exportAsText();
+    }
+
+    function exportHighlights() {
+      // Legacy method to maintain backward compatibility
+      showExportOptions();
     }
 
     function toggleHighlightMode() {
@@ -370,13 +417,11 @@ export default {
       cleanupSelectionListeners();
     });
 
-    // Watch for date changes and clear highlights
+    // Watch for date changes in props
     watch(() => props.currentDate, (newDate, oldDate) => {
       if (newDate !== oldDate) {
         // Clear all highlights when date changes
         highlighter.clearAllHighlights(props.reference);
-
-        // Show subtle notification to user
         showDateChangeNotification();
       }
     });
@@ -390,6 +435,7 @@ export default {
       highlightMode,
       showColorSelection,
       showCollection,
+      showExportDialog,
       highlights,
       highlightColors,
       exportLoading,
@@ -406,6 +452,9 @@ export default {
       cancelSelection,
       removeHighlight,
       exportHighlights,
+      exportAsImage,
+      exportAsText,
+      showExportOptions,
       confirmMobileSelection
     };
   }
@@ -497,6 +546,93 @@ export default {
   padding: 10px;
   z-index: 1100;
   animation: fadeUp 0.3s ease-out;
+}
+
+/* Export dialog */
+.export-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.3s;
+}
+
+.export-dialog-content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: modalSlideUp 0.3s;
+}
+
+.export-dialog h3 {
+  color: #6e4f3a;
+  margin-top: 0;
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.export-options {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.export-option-btn {
+  background-color: #f0f0f0;
+  color: #6e4f3a;
+  border: none;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  flex: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-option-btn:hover {
+  background-color: #e6e6e6;
+}
+
+.export-option-btn i {
+  font-size: 24px;
+  color: #A67D51;
+}
+
+.export-dialog-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #6e4f3a;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+}
+
+.export-dialog-close:hover {
+  background-color: #f0f0f0;
 }
 
 @keyframes fadeUp {

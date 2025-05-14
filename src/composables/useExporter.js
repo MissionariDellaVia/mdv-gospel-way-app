@@ -10,7 +10,7 @@ export default function useExporter(options) {
     const {
         highlights,
         title,
-        reference,
+        reference: initialReference,
         formattedDate,
         organization
     } = options;
@@ -18,11 +18,22 @@ export default function useExporter(options) {
     // Loading state
     const isExportLoading = ref(false);
 
+    // Allow dynamic reference updates
+    const reference = ref(initialReference);
+
+    /**
+     * Update the reference text
+     * @param {String} newReference New reference text to use
+     */
+    function updateReference(newReference) {
+        reference.value = newReference;
+    }
+
     /**
      * Export highlights as image
      * @param {Boolean} isMobile Whether device is mobile
      */
-    async function exportHighlights(isMobile = false) {
+    async function exportAsImage(isMobile = false) {
         if (!highlights.value.length) return;
 
         isExportLoading.value = true;
@@ -56,11 +67,84 @@ export default function useExporter(options) {
                 downloadImage(imgData);
             }
         } catch (error) {
-            console.error('Error exporting highlights:', error);
+            console.error('Error exporting highlights as image:', error);
             alert('Si è verificato un errore durante l\'esportazione. Riprova più tardi.');
         } finally {
             isExportLoading.value = false;
         }
+    }
+
+    /**
+     * Export highlights as text file
+     */
+    function exportAsText() {
+        if (!highlights.value.length) return;
+
+        isExportLoading.value = true;
+
+        try {
+            // Create text content
+            const textContent = [
+                `${title}`,
+                `${reference.value}`,
+                `Data: ${formattedDate.value}`,
+                `\nEvidenziazioni:\n`
+            ];
+
+            // Add all highlights with their colors
+            highlights.value.forEach((highlight, index) => {
+                const colorName = getColorName(highlight.color);
+                textContent.push(`${index + 1}. "${highlight.text}" (${colorName})`);
+            });
+
+            // Add footer
+            textContent.push(`\n${organization}`);
+
+            // Join content with line breaks
+            const content = textContent.join('\n');
+
+            // Create and download text file
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const filename = `evidenziazioni-${
+                reference.value ? reference.value.replace(/\s+/g, '-').toLowerCase() : 'vangelo'
+            }-${new Date().toISOString().split('T')[0]}.txt`;
+
+            link.href = url;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } catch (error) {
+            console.error('Error exporting highlights as text:', error);
+            alert('Si è verificato un errore durante l\'esportazione. Riprova più tardi.');
+        } finally {
+            isExportLoading.value = false;
+        }
+    }
+
+    /**
+     * Get human-readable name for color
+     * @param {String} color CSS color value
+     * @returns {String} Color name
+     */
+    function getColorName(color) {
+        const colorMap = {
+            'rgba(255, 230, 0, 0.35)': 'Giallo',
+            'rgba(0, 176, 255, 0.35)': 'Azzurro',
+            'rgba(255, 121, 168, 0.35)': 'Rosa',
+            'rgba(0, 230, 118, 0.35)': 'Verde',
+            'rgba(187, 107, 217, 0.35)': 'Viola'
+        };
+
+        return colorMap[color] || 'Evidenziato';
     }
 
     /**
@@ -117,13 +201,13 @@ export default function useExporter(options) {
         const titleH2 = document.createElement('h2');
         titleH2.style.margin = '0';
         titleH2.style.fontSize = '22px';
-        titleH2.textContent = title;
+        titleH2.textContent = 'Vangelo del Giorno'; // Fixed title
 
         const subtitleP = document.createElement('p');
         subtitleP.style.margin = '5px 0 0';
         subtitleP.style.opacity = '0.9';
         subtitleP.style.fontSize = '16px';
-        subtitleP.textContent = reference || 'Evidenziazioni';
+        subtitleP.textContent = reference.value || 'Evidenziazioni';
 
         titleDiv.appendChild(titleH2);
         titleDiv.appendChild(subtitleP);
@@ -197,16 +281,21 @@ export default function useExporter(options) {
         footer.style.padding = '15px 20px';
         footer.style.display = 'flex';
         footer.style.justifyContent = 'space-between';
-        footer.style.color = '#6e4f3a';
-        footer.style.fontSize = '14px';
+        footer.style.alignItems = 'center';
+        footer.style.borderTop = '1px solid rgba(166, 125, 81, 0.1)';
 
+        // Organization name on the left
         const orgInfo = document.createElement('div');
         orgInfo.textContent = organization;
         orgInfo.style.fontSize = '12px';
-        orgInfo.style.maxWidth = '60%';
+        orgInfo.style.maxWidth = '70%';
+        orgInfo.style.color = '#6e4f3a';
 
+        // Date on the right
         const dateInfo = document.createElement('div');
         dateInfo.textContent = formattedDate.value;
+        dateInfo.style.fontSize = '12px';
+        dateInfo.style.color = '#6e4f3a';
 
         footer.appendChild(orgInfo);
         footer.appendChild(dateInfo);
@@ -223,7 +312,7 @@ export default function useExporter(options) {
             const blob = await (await fetch(imgData)).blob();
             const file = new File(
                 [blob],
-                `evidenziazioni-${reference || 'vangelo'}.png`,
+                `evidenziazioni-${reference.value || 'vangelo'}.png`,
                 { type: 'image/png' }
             );
 
@@ -245,7 +334,7 @@ export default function useExporter(options) {
     function downloadImage(imgData) {
         const link = document.createElement('a');
         link.download = `evidenziazioni-${
-            reference ? reference.replace(/\s+/g, '-').toLowerCase() : 'vangelo'
+            reference.value ? reference.value.replace(/\s+/g, '-').toLowerCase() : 'vangelo'
         }-${new Date().toISOString().split('T')[0]}.png`;
         link.href = imgData;
         link.style.display = 'none';
@@ -255,8 +344,14 @@ export default function useExporter(options) {
         document.body.removeChild(link);
     }
 
+    // Legacy function name for backward compatibility
+    const exportHighlights = exportAsImage;
+
     return {
         isExportLoading,
-        exportHighlights
+        exportHighlights,
+        exportAsImage,
+        exportAsText,
+        updateReference
     };
 }
