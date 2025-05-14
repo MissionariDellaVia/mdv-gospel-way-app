@@ -5,6 +5,16 @@
       <slot></slot>
     </div>
 
+    <!-- Mobile selection confirmation button -->
+    <div v-if="isMobile && showMobileConfirm" class="mobile-confirm-selection">
+      <button @click="confirmMobileSelection" class="confirm-selection-btn">
+        <i class="fa-solid fa-check"></i> Colora selezione
+      </button>
+      <button @click="cancelSelection" class="cancel-selection-btn">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
     <!-- Control panel with buttons and color selection -->
     <div class="highlighter-controls" ref="controlBar">
       <!-- Main button group -->
@@ -75,19 +85,22 @@ export default {
     }
   },
   setup(props) {
-    // Refs for DOM elements
+    // ====================================
+    // STATE MANAGEMENT
+    // ====================================
     const contentContainer = ref(null);
     const controlBar = ref(null);
 
-    // States
     const highlightMode = ref(false);
     const showColorSelection = ref(false);
     const showCollection = ref(false);
     const selectedRange = ref(null);
     const highlights = ref([]);
     const highlightId = ref(1);
-    const currentDate = ref(new Date('2025-05-13T21:59:38Z'));
+    const currentDate = ref(new Date('2025-05-14T09:19:19Z'));
     const exportLoading = ref(false);
+    const isMobile = ref(false);
+    const showMobileConfirm = ref(false);
 
     // Color palette
     const highlightColors = [
@@ -111,18 +124,24 @@ export default {
       return currentDate.value.toLocaleDateString('it-IT', options);
     });
 
-    // Check if is mobile device
-    function isMobileDevice() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // ====================================
+    // DEVICE DETECTION
+    // ====================================
+    function detectMobileDevice() {
+      isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+      );
+      return isMobile.value;
     }
 
-    // Check if is iOS
     function isIOS() {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
 
-    // Handle text selection
-    function checkSelection() {
+    // ====================================
+    // TEXT SELECTION HANDLING
+    // ====================================
+    function checkSelection(event) {
       if (!highlightMode.value) return;
 
       const selection = window.getSelection();
@@ -131,17 +150,43 @@ export default {
       if (text && isSelectionWithinContent(selection)) {
         // Save the selection range
         selectedRange.value = selection.getRangeAt(0).cloneRange();
-        // Show color selection
-        showColorSelection.value = true;
 
-        // Make sure control bar is visible
-        setTimeout(() => {
-          scrollToControlBar();
-        }, 0);
+        if (isMobile.value) {
+          // On mobile, show confirmation button without scrolling to toolbar
+          showMobileConfirm.value = true;
+          showColorSelection.value = false;
+        } else {
+          // On desktop, show color picker and scroll to it
+          showColorSelection.value = true;
+
+          // Only scroll to toolbar on desktop
+          setTimeout(() => scrollToControlBar(), 0);
+        }
+      } else {
+        // Don't cancel if clicking inside UI elements
+        const target = event?.target;
+        const isInsideUIElement = target && (
+            target.closest('.color-selection-bar') ||
+            target.closest('.mobile-confirm-selection')
+        );
+
+        if (!isInsideUIElement) {
+          cancelSelection();
+        }
       }
     }
 
-    // Check if selection is within content
+    function confirmMobileSelection() {
+      if (selectedRange.value) {
+        // Hide mobile confirmation, show color selection
+        showMobileConfirm.value = false;
+        showColorSelection.value = true;
+
+        // Now scroll to color picker
+        setTimeout(() => scrollToControlBar(), 50);
+      }
+    }
+
     function isSelectionWithinContent(selection) {
       if (!selection.rangeCount) return false;
 
@@ -152,7 +197,6 @@ export default {
       return containerEl.contains(range.commonAncestorContainer);
     }
 
-    // Scroll to control bar
     function scrollToControlBar() {
       if (controlBar.value) {
         const rect = controlBar.value.getBoundingClientRect();
@@ -163,144 +207,171 @@ export default {
       }
     }
 
-    // Apply highlight to selected text
+    // ====================================
+    // HIGHLIGHTING FUNCTIONS
+    // ====================================
     function applyHighlight(color) {
       if (!selectedRange.value) return;
 
       try {
-        // Create a highlight span
-        const newId = `highlight-${highlightId.value++}`;
-        const highlightSpan = document.createElement('span');
-        highlightSpan.className = 'text-highlight';
-        highlightSpan.id = newId;
-        highlightSpan.style.backgroundColor = color;
-
-        // Get the text content
-        const selectedText = selectedRange.value.toString();
-
-        // Apply the highlight
-        selectedRange.value.surroundContents(highlightSpan);
-
-        // Store the highlight
-        highlights.value.push({
-          id: newId,
-          text: selectedText,
-          color,
-          timestamp: new Date().toISOString()
-        });
-
-        // Save to localStorage
-        saveHighlights();
-
-        // Clear selection
-        window.getSelection().removeAllRanges();
-        showColorSelection.value = false;
+        // Primary approach: use Range API
+        applyHighlightWithRange(color);
       } catch (error) {
-        console.error('Error applying highlight:', error);
+        console.error('Error applying highlight with Range API:', error);
 
-        // Try using execCommand as fallback
         try {
-          const selection = window.getSelection();
-          const selectedText = selection.toString();
-
-          if (selectedText.trim()) {
-            const newId = `highlight-${highlightId.value++}`;
-
-            // Use execCommand
-            document.execCommand('insertHTML', false,
-                `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`);
-
-            // Store the highlight
-            highlights.value.push({
-              id: newId,
-              text: selectedText,
-              color,
-              timestamp: new Date().toISOString()
-            });
-
-            // Save to localStorage
-            saveHighlights();
-          }
+          // Secondary approach: use execCommand
+          applyHighlightWithExecCommand(color);
         } catch (e) {
-          console.error('Fallback highlighting failed:', e);
+          console.error('Error applying highlight with execCommand:', e);
 
           // Last resort: try manual DOM manipulation
-          const selection = window.getSelection();
-          if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const selectedText = range.toString().trim();
-
-            if (selectedText) {
-              applyManualHighlight(selectedText, color);
-            }
-          }
+          applyHighlightManually(color);
         }
-
-        // Clear selection
-        window.getSelection().removeAllRanges();
-        showColorSelection.value = false;
       }
+
+      // Clear selection state
+      window.getSelection().removeAllRanges();
+      showColorSelection.value = false;
+      showMobileConfirm.value = false;
     }
 
-    // Apply highlight manually (for mobile)
-    function applyManualHighlight(text, color) {
-      if (!text || !contentContainer.value) return;
+    function applyHighlightWithRange(color) {
+      // Create a highlight span
+      const newId = `highlight-${highlightId.value++}`;
+      const highlightSpan = document.createElement('span');
+      highlightSpan.className = 'text-highlight';
+      highlightSpan.id = newId;
+      highlightSpan.style.backgroundColor = color;
+
+      // Get the text content
+      const selectedText = selectedRange.value.toString();
+
+      // Apply the highlight
+      selectedRange.value.surroundContents(highlightSpan);
+
+      // Store the highlight
+      storeHighlight(newId, selectedText, color);
+    }
+
+    function applyHighlightWithExecCommand(color) {
+      const selection = window.getSelection();
+      const selectedText = selection.toString().trim();
+
+      if (!selectedText) return;
+
+      const newId = `highlight-${highlightId.value++}`;
+
+      // Use execCommand to insert HTML
+      document.execCommand(
+          'insertHTML',
+          false,
+          `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`
+      );
+
+      // Store the highlight
+      storeHighlight(newId, selectedText, color);
+    }
+
+    function applyHighlightManually(color) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      const selectedText = range.toString().trim();
+
+      if (!selectedText || !contentContainer.value) return;
 
       const newId = `highlight-${highlightId.value++}`;
 
       try {
-        // Find text in content
+        // Find text in content using regex
         const html = contentContainer.value.innerHTML;
-        const safeText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const safeText = selectedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(${safeText})(?![^<]*>|[^<>]*</)`, 'i');
 
         if (regex.test(html)) {
           // Replace with highlight
           contentContainer.value.innerHTML = html.replace(
               regex,
-              `<span id="${newId}" class="text-highlight" style="background-color:${color};">$1</span>`
+              `<span id="${newId}" class="text-highlight" style="background-color:${color};">${selectedText}</span>`
           );
 
           // Store highlight
-          highlights.value.push({
-            id: newId,
-            text,
-            color,
-            timestamp: new Date().toISOString()
-          });
-
-          // Save to localStorage
-          saveHighlights();
-        } else {
-          console.log('Text not found for replacement');
+          storeHighlight(newId, selectedText, color);
         }
       } catch (e) {
         console.error('Manual highlighting failed:', e);
+        showHighlightError();
       }
     }
 
-    // Cancel highlight selection
+    function storeHighlight(id, text, color) {
+      // Add to highlights array
+      highlights.value.push({
+        id,
+        text,
+        color,
+        timestamp: new Date().toISOString()
+      });
+
+      // Save to localStorage
+      saveHighlights();
+    }
+
+    function showHighlightError() {
+      const toast = document.createElement('div');
+      toast.className = 'highlight-error';
+      toast.textContent = 'Impossibile evidenziare questo testo. Prova a selezionare un testo più breve.';
+      toast.style.position = 'fixed';
+      toast.style.top = '50%';
+      toast.style.left = '50%';
+      toast.style.transform = 'translate(-50%, -50%)';
+      toast.style.backgroundColor = 'rgba(220, 53, 69, 0.9)';
+      toast.style.color = 'white';
+      toast.style.padding = '12px 20px';
+      toast.style.borderRadius = '8px';
+      toast.style.zIndex = '2000';
+      toast.style.fontSize = '14px';
+      toast.style.maxWidth = '90%';
+      toast.style.textAlign = 'center';
+
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+          if (toast.parentNode) document.body.removeChild(toast);
+        }, 500);
+      }, 3000);
+    }
+
     function cancelSelection() {
       window.getSelection().removeAllRanges();
       selectedRange.value = null;
       showColorSelection.value = false;
+      showMobileConfirm.value = false;
     }
 
-    // Remove a highlight
     function removeHighlight(index) {
       const highlightId = highlights.value[index].id;
 
+      // Remove highlight from DOM
       const highlightEl = document.getElementById(highlightId);
       if (highlightEl) {
         const textNode = document.createTextNode(highlightEl.textContent);
         highlightEl.parentNode.replaceChild(textNode, highlightEl);
       }
 
+      // Remove from data
       highlights.value.splice(index, 1);
       saveHighlights();
     }
 
-    // Save highlights to localStorage
+    // ====================================
+    // STORAGE FUNCTIONS
+    // ====================================
     function saveHighlights() {
       try {
         localStorage.setItem(`highlights-${props.reference || 'page'}`, JSON.stringify({
@@ -312,7 +383,6 @@ export default {
       }
     }
 
-    // Load highlights from localStorage
     function loadHighlights() {
       try {
         const stored = localStorage.getItem(`highlights-${props.reference || 'page'}`);
@@ -334,7 +404,6 @@ export default {
       }
     }
 
-    // Clear all highlights
     function clearAllHighlights() {
       // Remove all highlight spans from the DOM
       highlights.value.forEach(highlight => {
@@ -356,7 +425,9 @@ export default {
       }
     }
 
-    // Export highlights as image
+    // ====================================
+    // EXPORT FUNCTIONS
+    // ====================================
     async function exportHighlights() {
       if (!hasHighlights.value) return;
 
@@ -364,115 +435,8 @@ export default {
       exportLoading.value = true;
 
       try {
-        // Create export container
-        const exportContainer = document.createElement('div');
-        exportContainer.className = 'highlight-export-container';
-        exportContainer.style.width = '90%';
-        exportContainer.style.maxWidth = '750px';
-        exportContainer.style.padding = '0';
-        exportContainer.style.margin = '0 auto';
-        exportContainer.style.backgroundColor = 'white';
-        exportContainer.style.fontFamily = '"Barlow Semi Condensed", sans-serif';
-        exportContainer.style.color = '#281D02';
-        exportContainer.style.borderRadius = '12px';
-        exportContainer.style.overflow = 'hidden';
-        exportContainer.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
-
-        // Add header
-        const header = document.createElement('div');
-        header.style.padding = '20px';
-        header.style.background = 'linear-gradient(to right, #6e4f3a, #A67D51)';
-        header.style.color = 'white';
-        header.style.display = 'flex';
-        header.style.alignItems = 'center';
-
-        const titleDiv = document.createElement('div');
-
-        const titleH2 = document.createElement('h2');
-        titleH2.style.margin = '0';
-        titleH2.style.fontSize = '22px';
-        titleH2.textContent = props.title;
-
-        const subtitleP = document.createElement('p');
-        subtitleP.style.margin = '5px 0 0';
-        subtitleP.style.opacity = '0.9';
-        subtitleP.style.fontSize = '16px';
-        subtitleP.textContent = props.reference || 'Evidenziazioni';
-
-        titleDiv.appendChild(titleH2);
-        titleDiv.appendChild(subtitleP);
-        header.appendChild(titleDiv);
-        exportContainer.appendChild(header);
-
-        // Add highlights
-        const highlightsSection = document.createElement('div');
-        highlightsSection.style.padding = '20px';
-
-        highlights.value.forEach(highlight => {
-          const highlightItem = document.createElement('div');
-          highlightItem.style.display = 'flex';
-          highlightItem.style.marginBottom = '15px';
-          highlightItem.style.paddingBottom = '15px';
-          highlightItem.style.borderBottom = '1px solid rgba(166, 125, 81, 0.2)';
-
-          const colorBar = document.createElement('div');
-          colorBar.style.width = '5px';
-          colorBar.style.flexShrink = '0';
-          colorBar.style.borderRadius = '3px';
-          colorBar.style.marginRight = '15px';
-          colorBar.style.backgroundColor = highlight.color;
-
-          const textContent = document.createElement('div');
-          textContent.style.flex = '1';
-          textContent.style.fontSize = '16px';
-          textContent.style.lineHeight = '1.5';
-          textContent.style.color = '#3e2723';
-
-          const openQuote = document.createElement('span');
-          openQuote.style.fontSize = '20px';
-          openQuote.style.color = '#A67D51';
-          openQuote.style.fontFamily = 'Georgia, serif';
-          openQuote.textContent = '"';
-
-          const textSpan = document.createElement('span');
-          textSpan.textContent = highlight.text;
-
-          const closeQuote = document.createElement('span');
-          closeQuote.style.fontSize = '20px';
-          closeQuote.style.color = '#A67D51';
-          closeQuote.style.fontFamily = 'Georgia, serif';
-          closeQuote.textContent = '"';
-
-          textContent.appendChild(openQuote);
-          textContent.appendChild(textSpan);
-          textContent.appendChild(closeQuote);
-
-          highlightItem.appendChild(colorBar);
-          highlightItem.appendChild(textContent);
-
-          highlightsSection.appendChild(highlightItem);
-        });
-
-        exportContainer.appendChild(highlightsSection);
-
-        // Add footer with date
-        const footer = document.createElement('div');
-        footer.style.padding = '15px 20px';
-        footer.style.textAlign = 'right';
-        footer.style.color = '#6e4f3a';
-        footer.style.fontSize = '14px';
-
-        const dateInfo = document.createElement('div');
-        dateInfo.textContent = formattedDate.value;
-
-        footer.appendChild(dateInfo);
-        exportContainer.appendChild(footer);
-
-        // Add to DOM temporarily but hidden
+        const exportContainer = createExportContainer();
         document.body.appendChild(exportContainer);
-        exportContainer.style.position = 'fixed';
-        exportContainer.style.left = '-9999px';
-        exportContainer.style.top = '0';
 
         // Short delay to ensure everything renders properly
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -493,23 +457,9 @@ export default {
         document.body.removeChild(exportContainer);
 
         // Share or download based on platform
-        if (isMobileDevice() && navigator.share) {
-          // For mobile devices with share capability
-          try {
-            const blob = await (await fetch(imgData)).blob();
-            const file = new File([blob], `evidenziazioni-${props.reference || 'vangelo'}.png`, { type: 'image/png' });
-
-            await navigator.share({
-              files: [file],
-              title: 'Le mie evidenziazioni',
-              text: 'Evidenziazioni da La Via del Vangelo'
-            });
-          } catch (err) {
-            console.error('Error sharing', err);
-            downloadImage(imgData);
-          }
+        if (isMobile.value && navigator.share) {
+          await shareImage(imgData);
         } else {
-          // For desktop or older mobile browsers
           downloadImage(imgData);
         }
       } catch (error) {
@@ -520,10 +470,164 @@ export default {
       }
     }
 
-    // Download image helper
+    function createExportContainer() {
+      // Create export container
+      const container = document.createElement('div');
+      container.className = 'highlight-export-container';
+      container.style.width = '90%';
+      container.style.maxWidth = '750px';
+      container.style.padding = '0';
+      container.style.margin = '0 auto';
+      container.style.backgroundColor = 'white';
+      container.style.fontFamily = '"Barlow Semi Condensed", sans-serif';
+      container.style.color = '#281D02';
+      container.style.borderRadius = '12px';
+      container.style.overflow = 'hidden';
+      container.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+
+      // Add header
+      const header = createExportHeader();
+      container.appendChild(header);
+
+      // Add highlights
+      const highlightsSection = createExportHighlightsSection();
+      container.appendChild(highlightsSection);
+
+      // Add footer
+      const footer = createExportFooter();
+      container.appendChild(footer);
+
+      return container;
+    }
+
+    function createExportHeader() {
+      const header = document.createElement('div');
+      header.style.padding = '20px';
+      header.style.background = 'linear-gradient(to right, #6e4f3a, #A67D51)';
+      header.style.color = 'white';
+      header.style.display = 'flex';
+      header.style.alignItems = 'center';
+
+      const titleDiv = document.createElement('div');
+
+      const titleH2 = document.createElement('h2');
+      titleH2.style.margin = '0';
+      titleH2.style.fontSize = '22px';
+      titleH2.textContent = props.title;
+
+      const subtitleP = document.createElement('p');
+      subtitleP.style.margin = '5px 0 0';
+      subtitleP.style.opacity = '0.9';
+      subtitleP.style.fontSize = '16px';
+      subtitleP.textContent = props.reference || 'Evidenziazioni';
+
+      titleDiv.appendChild(titleH2);
+      titleDiv.appendChild(subtitleP);
+      header.appendChild(titleDiv);
+
+      return header;
+    }
+
+    function createExportHighlightsSection() {
+      const section = document.createElement('div');
+      section.style.padding = '20px';
+
+      highlights.value.forEach(highlight => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.marginBottom = '15px';
+        item.style.paddingBottom = '15px';
+        item.style.borderBottom = '1px solid rgba(166, 125, 81, 0.2)';
+
+        const colorBar = document.createElement('div');
+        colorBar.style.width = '5px';
+        colorBar.style.flexShrink = '0';
+        colorBar.style.borderRadius = '3px';
+        colorBar.style.marginRight = '15px';
+        colorBar.style.backgroundColor = highlight.color;
+
+        const textContent = document.createElement('div');
+        textContent.style.flex = '1';
+        textContent.style.fontSize = '16px';
+        textContent.style.lineHeight = '1.5';
+        textContent.style.color = '#3e2723';
+
+        const openQuote = document.createElement('span');
+        openQuote.style.fontSize = '20px';
+        openQuote.style.color = '#A67D51';
+        openQuote.style.fontFamily = 'Georgia, serif';
+        openQuote.textContent = '"';
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = highlight.text;
+
+        const closeQuote = document.createElement('span');
+        closeQuote.style.fontSize = '20px';
+        closeQuote.style.color = '#A67D51';
+        closeQuote.style.fontFamily = 'Georgia, serif';
+        closeQuote.textContent = '"';
+
+        textContent.appendChild(openQuote);
+        textContent.appendChild(textSpan);
+        textContent.appendChild(closeQuote);
+
+        item.appendChild(colorBar);
+        item.appendChild(textContent);
+
+        section.appendChild(item);
+      });
+
+      return section;
+    }
+
+    function createExportFooter() {
+      const footer = document.createElement('div');
+      footer.style.padding = '15px 20px';
+      footer.style.display = 'flex';
+      footer.style.justifyContent = 'space-between';
+      footer.style.color = '#6e4f3a';
+      footer.style.fontSize = '14px';
+
+      const userInfo = document.createElement('div');
+      userInfo.textContent = 'Alessandro-Mac7';
+
+      const dateInfo = document.createElement('div');
+      dateInfo.textContent = formattedDate.value;
+
+      footer.appendChild(userInfo);
+      footer.appendChild(dateInfo);
+
+      return footer;
+    }
+
+    async function shareImage(imgData) {
+      try {
+        const blob = await (await fetch(imgData)).blob();
+        const file = new File(
+            [blob],
+            `evidenziazioni-${props.reference || 'vangelo'}.png`,
+            { type: 'image/png' }
+        );
+
+        await navigator.share({
+          files: [file],
+          title: 'Le mie evidenziazioni',
+          text: 'Evidenziazioni da La Via del Vangelo'
+        });
+      } catch (err) {
+        console.error('Error sharing', err);
+        downloadImage(imgData);
+      }
+    }
+
     function downloadImage(imgData) {
       const link = document.createElement('a');
-      const filename = `evidenziazioni-${props.reference ? props.reference.replace(/\s+/g, '-').toLowerCase() : 'vangelo'}-${new Date().toISOString().split('T')[0]}.png`;
+      const filename = `evidenziazioni-${
+          props.reference ? props.reference.replace(/\s+/g, '-').toLowerCase() : 'vangelo'
+      }-${new Date().toISOString().split('T')[0]}.png`;
 
       link.download = filename;
       link.href = imgData;
@@ -534,18 +638,19 @@ export default {
       document.body.removeChild(link);
     }
 
-    // Toggle highlight mode on/off
+    // ====================================
+    // UI FUNCTIONS
+    // ====================================
     function toggleHighlightMode() {
       highlightMode.value = !highlightMode.value;
 
       if (!highlightMode.value) {
         cancelSelection();
-      } else if (isMobileDevice()) {
+      } else if (isMobile.value) {
         showMobileTip();
       }
     }
 
-    // Show tooltip for mobile users
     function showMobileTip() {
       const toast = document.createElement('div');
       toast.className = 'mobile-highlight-tip';
@@ -575,44 +680,81 @@ export default {
       }, 3000);
     }
 
-    // Handle touch event for mobile
-    function handleTouchEnd() {
-      if (!highlightMode.value) return;
+    function showDateChangeNotification() {
+      const toast = document.createElement('div');
+      toast.className = 'date-change-notification';
+      toast.textContent = 'Data cambiata. Le evidenziazioni sono state ripristinate.';
+      toast.style.position = 'fixed';
+      toast.style.bottom = '20px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = 'rgba(166, 125, 81, 0.9)';
+      toast.style.color = 'white';
+      toast.style.padding = '8px 16px';
+      toast.style.borderRadius = '20px';
+      toast.style.zIndex = '1000';
+      toast.style.fontSize = '14px';
+      toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
 
-      // Small delay to let selection complete
-      setTimeout(() => checkSelection(), 100);
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+          if (toast.parentNode) {
+            document.body.removeChild(toast);
+          }
+        }, 500);
+      }, 3000);
     }
 
-    // Setup selection listeners
+    // ====================================
+    // EVENT MANAGEMENT
+    // ====================================
     function setupSelectionListeners() {
+      // All devices: handle mouse selection
       document.addEventListener('mouseup', checkSelection);
 
-      if (isMobileDevice()) {
-        document.addEventListener('touchend', handleTouchEnd);
-        document.addEventListener('selectionchange', function() {
+      if (isMobile.value) {
+        // Mobile: handle touch selection
+        document.addEventListener('touchend', (event) => {
+          if (!highlightMode.value) return;
+
+          // Small delay to let selection complete
+          setTimeout(() => checkSelection(event), 100);
+        });
+
+        // Monitor selection changes
+        document.addEventListener('selectionchange', () => {
+          if (!highlightMode.value) return;
+
           setTimeout(() => {
-            if (highlightMode.value) {
-              const selection = window.getSelection();
-              if (selection.toString().trim()) {
-                checkSelection();
-              }
+            const selection = window.getSelection();
+            if (selection.toString().trim()) {
+              checkSelection();
             }
           }, 100);
         });
       }
     }
 
-    // Clean up listeners
     function cleanupSelectionListeners() {
       document.removeEventListener('mouseup', checkSelection);
 
-      if (isMobileDevice()) {
-        document.removeEventListener('touchend', handleTouchEnd);
-        document.removeEventListener('selectionchange', checkSelection);
+      if (isMobile.value) {
+        document.removeEventListener('touchend', () => {});
+        document.removeEventListener('selectionchange', () => {});
       }
     }
 
+    // ====================================
+    // LIFECYCLE HOOKS
+    // ====================================
     onMounted(() => {
+      // Detect mobile device
+      detectMobileDevice();
+
       // Load saved highlights
       loadHighlights();
 
@@ -651,37 +793,8 @@ export default {
       }
     });
 
-    function showDateChangeNotification() {
-      const toast = document.createElement('div');
-      toast.className = 'date-change-notification';
-      toast.textContent = 'Data cambiata. Le evidenziazioni sono state ripristinate.';
-      toast.style.position = 'fixed';
-      toast.style.bottom = '20px';
-      toast.style.left = '50%';
-      toast.style.transform = 'translateX(-50%)';
-      toast.style.backgroundColor = 'rgba(166, 125, 81, 0.9)';
-      toast.style.color = 'white';
-      toast.style.padding = '8px 16px';
-      toast.style.borderRadius = '20px';
-      toast.style.zIndex = '1000';
-      toast.style.fontSize = '14px';
-      toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.5s';
-        setTimeout(() => {
-          if (toast.parentNode) {
-            document.body.removeChild(toast);
-          }
-        }, 500);
-      }, 3000);
-    }
-
     return {
-      // Template refs
+      // Refs
       contentContainer,
       controlBar,
 
@@ -692,6 +805,8 @@ export default {
       highlights,
       highlightColors,
       exportLoading,
+      isMobile,
+      showMobileConfirm,
 
       // Computed
       hasHighlights,
@@ -702,7 +817,8 @@ export default {
       applyHighlight,
       cancelSelection,
       removeHighlight,
-      exportHighlights
+      exportHighlights,
+      confirmMobileSelection
     };
   }
 };
@@ -779,6 +895,55 @@ export default {
   margin: 10px 0;
   position: relative;
   align-items: center;
+}
+
+/* Mobile selection confirmation */
+.mobile-confirm-selection {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  z-index: 1100;
+  animation: fadeUp 0.3s ease-out;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.confirm-selection-btn {
+  background-color: #A67D51;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cancel-selection-btn {
+  background-color: #f0f0f0;
+  color: #6e4f3a;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Export loading overlay */
