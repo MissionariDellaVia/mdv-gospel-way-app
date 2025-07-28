@@ -1,9 +1,11 @@
 // services/StorageService.js
+import { STORAGE_CONFIG } from '@/constants';
+
 class StorageService {
   constructor() {
     // Maximum size to keep storage usage under (in bytes)
-    this.maxSize = 4 * 1024 * 1024; // 4MB limit (well under browser limit)
-    this.storagePrefix = 'mdv_';
+    this.maxSize = STORAGE_CONFIG.MAX_SIZE;
+    this.storagePrefix = STORAGE_CONFIG.PREFIX;
     
     // Keep track of cache entries for LRU eviction
     this._initCacheTracker();
@@ -11,7 +13,7 @@ class StorageService {
 
   _initCacheTracker() {
     try {
-      this.cacheTracker = JSON.parse(localStorage.getItem(`${this.storagePrefix}cache_tracker`)) || {};
+      this.cacheTracker = JSON.parse(localStorage.getItem(`${this.storagePrefix}${STORAGE_CONFIG.CACHE_TRACKER_KEY}`)) || {};
     } catch (e) {
       console.warn("Error reading cache tracker, resetting:", e);
       this.cacheTracker = {};
@@ -21,7 +23,7 @@ class StorageService {
 
   _saveCacheTracker() {
     try {
-      localStorage.setItem(`${this.storagePrefix}cache_tracker`, JSON.stringify(this.cacheTracker));
+      localStorage.setItem(`${this.storagePrefix}${STORAGE_CONFIG.CACHE_TRACKER_KEY}`, JSON.stringify(this.cacheTracker));
     } catch (e) {
       console.warn("Error saving cache tracker:", e);
     }
