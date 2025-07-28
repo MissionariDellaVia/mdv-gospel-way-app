@@ -5,16 +5,6 @@
       <slot></slot>
     </div>
 
-    <!-- Mobile selection confirmation button -->
-    <div v-if="isMobile && showMobileConfirm" class="mobile-confirm-selection">
-      <button @click="confirmMobileSelection" class="confirm-selection-btn">
-        <i class="fa-solid fa-check"></i> Colora selezione
-      </button>
-      <button @click="cancelSelection" class="cancel-selection-btn">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
     <!-- Control panel with buttons and color selection -->
     <div class="highlighter-controls" ref="controlBar">
       <!-- Main button group -->
@@ -123,7 +113,6 @@ export default {
     const highlightId = ref(1);
     const exportLoading = ref(false);
     const isMobile = ref(false);
-    const showMobileConfirm = ref(false);
 
     // Color palette
     const highlightColors = [
@@ -183,92 +172,70 @@ export default {
     });
 
     // ====================================
-    // MOBILE SELECTION HANDLING
+    // SIMPLIFIED SELECTION HANDLING
     // ====================================
     const selectionTimeout = ref(null);
 
-    function handleTextSelection(event) {
-      if (!highlightMode.value) return;
+    function handleTextSelection() {
+        if (!highlightMode.value) return;
 
-      // Debounce selection handling
-      if (selectionTimeout.value) {
-        clearTimeout(selectionTimeout.value);
-      }
-
-      selectionTimeout.value = setTimeout(() => {
-        const selection = highlighter.getCurrentSelection();
-        
-        if (selection && highlighter.isSelectionWithinContent(selection)) {
-          // Save the selection range
-          try {
-            selectedRange.value = selection.getRangeAt(0).cloneRange();
-            
-            if (isMobile.value) {
-              // On mobile, show confirmation button
-              showMobileConfirm.value = true;
-              showColorSelection.value = false;
-            } else {
-              // On desktop, show color picker directly
-              showColorSelection.value = true;
-              setTimeout(() => scrollToControlBar(), 100);
-            }
-          } catch (error) {
-            console.warn('Error handling selection:', error);
-            cancelSelection();
-          }
-        } else {
-          // Check if clicking inside UI elements
-          const target = event?.target;
-          const isInsideUIElement = target && (
-              target.closest('.color-selection-bar') ||
-              target.closest('.mobile-confirm-selection') ||
-              target.closest('.export-dialog') ||
-              target.closest('.highlighter-controls')
-          );
-
-          if (!isInsideUIElement) {
-            cancelSelection();
-          }
+        // Clear any existing timeout
+        if (selectionTimeout.value) {
+            clearTimeout(selectionTimeout.value);
         }
-      }, isMobile.value ? 150 : 50);
-    }
 
-    function confirmMobileSelection() {
-      if (selectedRange.value) {
-        // Hide mobile confirmation, show color selection
-        showMobileConfirm.value = false;
-        showColorSelection.value = true;
-
-        // Now scroll to color picker
-        setTimeout(() => scrollToControlBar(), 50);
-      }
+        // Debounce selection handling
+        selectionTimeout.value = setTimeout(() => {
+            const selection = highlighter.getCurrentSelection();
+            const validRange = highlighter.handleTextSelection(selection);
+            
+            if (validRange) {
+                selectedRange.value = validRange;
+                showColorSelection.value = true;
+                
+                // Scroll to controls for better UX
+                setTimeout(() => scrollToControlBar(), 100);
+            } else {
+                // Only cancel if not clicking UI elements
+                const activeElement = document.activeElement;
+                const isUIClick = activeElement && (
+                    activeElement.closest('.color-selection-bar') ||
+                    activeElement.closest('.export-dialog') ||
+                    activeElement.closest('.highlighter-controls')
+                );
+                
+                if (!isUIClick) {
+                    cancelSelection();
+                }
+            }
+        }, 100); // Unified timeout for all devices
     }
 
     function scrollToControlBar() {
-      if (controlBar.value) {
-        const rect = controlBar.value.getBoundingClientRect();
-
-        if (rect.bottom > window.innerHeight || rect.top < 0) {
-          controlBar.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (controlBar.value) {
+            const rect = controlBar.value.getBoundingClientRect();
+            if (rect.bottom > window.innerHeight || rect.top < 0) {
+                controlBar.value.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }
         }
-      }
     }
 
     // ====================================
     // HIGHLIGHT METHODS
     // ====================================
     function applyHighlight(color) {
-      highlighter.applyHighlight(color);
-      showMobileConfirm.value = false;
+        highlighter.applyHighlight(color);
     }
 
     function cancelSelection() {
-      highlighter.cancelSelection();
-      showMobileConfirm.value = false;
+        highlighter.cancelSelection();
     }
 
     function removeHighlight(index) {
-      highlighter.removeHighlight(index);
+        highlighter.removeHighlight(index);
     }
 
     // ====================================
@@ -296,46 +263,16 @@ export default {
     }
 
     function toggleHighlightMode() {
-      highlightMode.value = !highlightMode.value;
-
-      if (!highlightMode.value) {
-        cancelSelection();
-      } else if (isMobile.value) {
-        showMobileTip();
-      }
+        highlightMode.value = !highlightMode.value;
+        
+        if (!highlightMode.value) {
+            cancelSelection();
+        }
     }
 
     // ====================================
     // UI NOTIFICATION HELPERS
     // ====================================
-    function showMobileTip() {
-      const toast = document.createElement('div');
-      toast.className = 'mobile-highlight-tip';
-      toast.innerHTML = 'Seleziona il testo tenendo premuto';
-      toast.style.position = 'fixed';
-      toast.style.bottom = '80px';
-      toast.style.left = '50%';
-      toast.style.transform = 'translateX(-50%)';
-      toast.style.backgroundColor = 'rgba(62, 39, 35, 0.9)';
-      toast.style.color = 'white';
-      toast.style.padding = '8px 16px';
-      toast.style.borderRadius = '20px';
-      toast.style.zIndex = '1000';
-      toast.style.fontSize = '14px';
-      toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.5s';
-        setTimeout(() => {
-          if (toast.parentNode) {
-            document.body.removeChild(toast);
-          }
-        }, 500);
-      }, 3000);
-    }
 
     function showDateChangeNotification() {
       const toast = document.createElement('div');
@@ -367,69 +304,55 @@ export default {
     }
 
     // ====================================
-    // EVENT MANAGEMENT
+    // EVENT MANAGEMENT - SIMPLIFIED
     // ====================================
-    let selectionChangeHandler = null;
-
     function setupSelectionListeners() {
-      // Unified event handling for all devices
-      if (highlighter.isTouchDevice()) {
-        // Touch devices: use touchend for better reliability
+        // Use a unified approach for all devices
+        document.addEventListener('mouseup', handleTextSelection);
         document.addEventListener('touchend', handleTextSelection, { passive: true });
         
-        // Also listen for selection changes on mobile
-        selectionChangeHandler = () => {
-          if (!highlightMode.value) return;
-          
-          // Use shorter timeout for selection changes
-          setTimeout(() => {
-            const selection = highlighter.getCurrentSelection();
-            if (selection) {
-              handleTextSelection();
+        // Also listen for selection changes for better mobile support
+        document.addEventListener('selectionchange', () => {
+            if (highlightMode.value) {
+                // Small delay to allow selection to stabilize
+                setTimeout(() => {
+                    const selection = highlighter.getCurrentSelection();
+                    if (selection) {
+                        handleTextSelection();
+                    }
+                }, 50);
             }
-          }, 100);
-        };
-        document.addEventListener('selectionchange', selectionChangeHandler);
-      } else {
-        // Non-touch devices: use mouseup
-        document.addEventListener('mouseup', handleTextSelection);
-      }
+        });
     }
 
     function cleanupSelectionListeners() {
-      // Clean up timeout
-      if (selectionTimeout.value) {
-        clearTimeout(selectionTimeout.value);
-        selectionTimeout.value = null;
-      }
+        // Clean up timeout
+        if (selectionTimeout.value) {
+            clearTimeout(selectionTimeout.value);
+            selectionTimeout.value = null;
+        }
 
-      // Remove event listeners
-      document.removeEventListener('mouseup', handleTextSelection);
-      document.removeEventListener('touchend', handleTextSelection);
-      
-      if (selectionChangeHandler) {
-        document.removeEventListener('selectionchange', selectionChangeHandler);
-        selectionChangeHandler = null;
-      }
+        // Remove event listeners
+        document.removeEventListener('mouseup', handleTextSelection);
+        document.removeEventListener('touchend', handleTextSelection);
+        document.removeEventListener('selectionchange', handleTextSelection);
     }
 
     // ====================================
     // LIFECYCLE HOOKS
     // ====================================
     onMounted(() => {
-      // Detect mobile device
-      isMobile.value = highlighter.isMobile();
+        // Detect mobile device
+        isMobile.value = highlighter.isMobile();
 
-      // Load saved highlights
-      highlighter.loadHighlights(props.reference);
+        // Load saved highlights
+        highlighter.loadHighlights(props.reference);
 
-      // Add iOS specific fixes if needed
-      if (highlighter.isIOS()) {
-        highlighter.addIOSFocusFix();
-      }
+        // Add cross-platform selection fixes
+        highlighter.addSelectionFixes();
 
-      // Setup event listeners
-      setupSelectionListeners();
+        // Setup event listeners
+        setupSelectionListeners();
     });
 
     onBeforeUnmount(() => {
@@ -461,7 +384,6 @@ export default {
       highlightColors,
       exportLoading,
       isMobile,
-      showMobileConfirm,
 
       // Computed
       hasHighlights,
@@ -475,8 +397,7 @@ export default {
       exportHighlights,
       exportAsImage,
       exportAsText,
-      showExportOptions,
-      confirmMobileSelection
+      showExportOptions
     };
   }
 };
@@ -585,20 +506,6 @@ export default {
   align-items: center;
 }
 
-/* Mobile selection confirmation */
-.mobile-confirm-selection {
-  position: fixed;
-  bottom: 20px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-  z-index: 1100;
-  animation: fadeUp 0.3s ease-out;
-}
-
 /* Export dialog */
 .export-dialog {
   position: fixed;
@@ -689,36 +596,6 @@ export default {
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.confirm-selection-btn {
-  background-color: #A67D51;
-  color: white;
-  border: none;
-  border-radius: 30px;
-  padding: 12px 20px;
-  font-size: 16px;
-  font-family: 'Barlow Semi Condensed', sans-serif;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.cancel-selection-btn {
-  background-color: #f0f0f0;
-  color: #6e4f3a;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  -webkit-tap-highlight-color: transparent;
 }
 
 /* Export loading overlay */
