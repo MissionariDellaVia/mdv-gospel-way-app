@@ -25,6 +25,7 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+<<<<<<< HEAD
 
 # Coverage directory used by tools like istanbul
 coverage
@@ -47,3 +48,5 @@ jspm_packages/
 # OS generated files
 Thumbs.db
 ehthumbs.db
+=======
+>>>>>>> main
