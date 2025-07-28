@@ -3,6 +3,7 @@ import {createRouter, createWebHashHistory} from 'vue-router'
 import MdvHome from '@/views/MdvHome.vue';
 import AboutUs from '@/views/AboutUs.vue';
 import GospelWay from '@/views/GospelWay.vue';
+import TestTextHighlighter from '@/views/TestTextHighlighter.vue';
 
 const routes = [
     {
@@ -20,6 +21,11 @@ const routes = [
         name: 'GospelWay',
         props: true,
         component: GospelWay
+    },
+    {
+        path: '/test-texthighlighter',
+        name: 'TestTextHighlighter',
+        component: TestTextHighlighter
     },
     {path: '/:notFound(.*)', component: MdvHome}
 ]

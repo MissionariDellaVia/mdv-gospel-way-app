@@ -3,8 +3,7 @@ export default function useHighlighter(options) {
         contentContainer,
         selectedRange,
         highlights,
-        highlightId,
-        showColorSelection
+        highlightId
     } = options;
 
     // ====================================
@@ -37,21 +36,31 @@ export default function useHighlighter(options) {
     }
 
     /**
-     * Add iOS specific fixes for text selection
+     * Add cross-platform fixes for text selection
      */
-    function addIOSFocusFix() {
-        if (document.getElementById('ios-selection-fix')) return;
+    function addSelectionFixes() {
+        if (document.getElementById('selection-fix')) return;
         
         const style = document.createElement('style');
-        style.id = 'ios-selection-fix';
+        style.id = 'selection-fix';
         style.textContent = `
-            .highlightable-content * {
+            .highlightable-content {
                 -webkit-user-select: text !important;
+                -moz-user-select: text !important;
+                -ms-user-select: text !important;
                 user-select: text !important;
+            }
+            .highlight-mode-active .highlightable-content {
                 -webkit-touch-callout: default !important;
+                -webkit-tap-highlight-color: rgba(166, 125, 81, 0.2) !important;
+                cursor: text !important;
             }
             .highlight-mode-active .highlightable-content * {
-                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+                -webkit-user-select: text !important;
+                -moz-user-select: text !important;
+                -ms-user-select: text !important;
+                user-select: text !important;
+                pointer-events: auto !important;
             }
         `;
         document.head.appendChild(style);
@@ -92,9 +101,38 @@ export default function useHighlighter(options) {
     function getCurrentSelection() {
         try {
             const selection = window.getSelection();
-            return selection && selection.toString().trim() ? selection : null;
+            if (!selection || selection.rangeCount === 0) return null;
+            
+            const selectedText = selection.toString().trim();
+            return selectedText.length > 0 ? selection : null;
         } catch (error) {
             console.warn('Error getting selection:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Handle text selection with improved reliability
+     * @param {Selection} selection The current selection
+     * @returns {Range|null} Valid range or null
+     */
+    function handleTextSelection(selection) {
+        if (!selection || !isSelectionWithinContent(selection)) {
+            return null;
+        }
+
+        try {
+            const range = selection.getRangeAt(0);
+            const selectedText = range.toString().trim();
+            
+            // Ensure we have meaningful text selected
+            if (selectedText.length < 1 || selectedText.length > 1000) {
+                return null;
+            }
+
+            return range.cloneRange();
+        } catch (error) {
+            console.warn('Error handling text selection:', error);
             return null;
         }
     }
@@ -113,7 +151,6 @@ export default function useHighlighter(options) {
         }
         
         selectedRange.value = null;
-        showColorSelection.value = false;
     }
 
     // ====================================
@@ -137,15 +174,7 @@ export default function useHighlighter(options) {
                 return;
             }
 
-            // Validate selection is still within content
-            const selection = getCurrentSelection();
-            if (!selection || !isSelectionWithinContent(selection)) {
-                console.warn('Selection is no longer valid');
-                cancelSelection();
-                return;
-            }
-
-            // Use the most reliable highlighting method
+            // Create highlight with improved error handling
             const success = createHighlightSpan(selectedRange.value, color, selectedText);
             
             if (success) {
@@ -153,7 +182,7 @@ export default function useHighlighter(options) {
                 cancelSelection();
                 showSuccessMessage('Testo evidenziato con successo');
             } else {
-                showHighlightError('Impossibile evidenziare questo testo. Riprova con una selezione più breve.');
+                showHighlightError('Impossibile evidenziare questo testo. Riprova.');
             }
 
         } catch (error) {
@@ -164,7 +193,7 @@ export default function useHighlighter(options) {
     }
 
     /**
-     * Create highlight span using the most reliable method
+     * Create highlight span using reliable method
      * @param {Range} range The selection range
      * @param {String} color Background color
      * @param {String} text Selected text
@@ -172,7 +201,6 @@ export default function useHighlighter(options) {
      */
     function createHighlightSpan(range, color, text) {
         try {
-            // Method 1: Use Range.surroundContents (most reliable for simple selections)
             if (range.collapsed) return false;
 
             const newId = `highlight-${highlightId.value++}`;
@@ -180,53 +208,29 @@ export default function useHighlighter(options) {
             highlightSpan.className = 'text-highlight';
             highlightSpan.id = newId;
             highlightSpan.style.backgroundColor = color;
-            highlightSpan.style.borderRadius = '2px';
-            highlightSpan.style.padding = '0 1px';
+            highlightSpan.style.borderRadius = '3px';
+            highlightSpan.style.padding = '1px 2px';
+            highlightSpan.style.margin = '0 1px';
+            highlightSpan.style.display = 'inline';
+            highlightSpan.style.boxDecorationBreak = 'clone';
+            highlightSpan.style.webkitBoxDecorationBreak = 'clone';
 
-            // Try to surround contents
+            // Use the most reliable method for wrapping content
             try {
                 range.surroundContents(highlightSpan);
-                storeHighlight(newId, text, color);
-                return true;
             } catch (surroundError) {
-                // If surroundContents fails, try extractContents + appendChild
+                // Fallback: extract and wrap content
                 const contents = range.extractContents();
                 highlightSpan.appendChild(contents);
                 range.insertNode(highlightSpan);
-                storeHighlight(newId, text, color);
-                return true;
             }
+
+            // Store the highlight
+            storeHighlight(newId, text, color);
+            return true;
 
         } catch (error) {
             console.warn('Primary highlighting method failed:', error);
-            // Fallback: try inserting HTML
-            return createHighlightWithHTML(text, color);
-        }
-    }
-
-    /**
-     * Fallback method using insertHTML
-     * @param {String} text Selected text
-     * @param {String} color Background color
-     * @returns {Boolean} Success status
-     */
-    function createHighlightWithHTML(text, color) {
-        try {
-            const newId = `highlight-${highlightId.value++}`;
-            const highlightHTML = `<span id="${newId}" class="text-highlight" style="background-color: ${color}; border-radius: 2px; padding: 0 1px;">${text}</span>`;
-            
-            // Use insertHTML if available
-            if (document.execCommand) {
-                const success = document.execCommand('insertHTML', false, highlightHTML);
-                if (success) {
-                    storeHighlight(newId, text, color);
-                    return true;
-                }
-            }
-            
-            return false;
-        } catch (error) {
-            console.warn('HTML highlighting method failed:', error);
             return false;
         }
     }
@@ -460,11 +464,12 @@ export default function useHighlighter(options) {
         isIOS,
         isMobile,
         isTouchDevice,
-        addIOSFocusFix,
+        addSelectionFixes,
 
         // Selection methods
         isSelectionWithinContent,
         getCurrentSelection,
+        handleTextSelection,
         cancelSelection,
 
         // Highlighting methods
