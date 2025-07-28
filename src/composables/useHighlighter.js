@@ -1,4 +1,8 @@
 // No ref import needed as we don't create reactive variables here
+import useDeviceDetection from './useDeviceDetection';
+import useToast from './useToast';
+import { STORAGE_CONFIG } from '@/constants';
+
 export default function useHighlighter(options) {
     const {
         contentContainer,
@@ -10,44 +14,11 @@ export default function useHighlighter(options) {
         showColorSelection
     } = options;
 
-    // ====================================
-    // DEVICE DETECTION
-    // ====================================
-
-    /**
-     * Check if the device is iOS
-     * @returns {Boolean} True if device is iOS
-     */
-    function isIOS() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
-
-    /**
-     * Check if the device is mobile
-     * @returns {Boolean} True if device is mobile
-     */
-    function isMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-        );
-    }
-
-    /**
-     * Add iOS specific fixes for text selection
-     */
-    function addIOSFocusFix() {
-        const style = document.createElement('style');
-        style.textContent = `
-      .highlightable-content * {
-        -webkit-user-select: text;
-        user-select: text;
-      }
-      .highlight-mode-active .highlightable-content * {
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-      }
-    `;
-        document.head.appendChild(style);
-    }
+    // Use device detection composable
+    const { isIOS, isMobile, addIOSFocusFix } = useDeviceDetection();
+    
+    // Use toast composable
+    const { showHighlightError } = useToast();
 
     // ====================================
     // SELECTION METHODS
@@ -215,37 +186,6 @@ export default function useHighlighter(options) {
     }
 
     /**
-     * Show error message when highlighting fails
-     */
-    function showHighlightError() {
-        const toast = document.createElement('div');
-        toast.className = 'highlight-error';
-        toast.textContent = 'Impossibile evidenziare questo testo. Prova a selezionare un testo più breve.';
-        toast.style.position = 'fixed';
-        toast.style.top = '50%';
-        toast.style.left = '50%';
-        toast.style.transform = 'translate(-50%, -50%)';
-        toast.style.backgroundColor = 'rgba(220, 53, 69, 0.9)';
-        toast.style.color = 'white';
-        toast.style.padding = '12px 20px';
-        toast.style.borderRadius = '8px';
-        toast.style.zIndex = '2000';
-        toast.style.fontSize = '14px';
-        toast.style.maxWidth = '90%';
-        toast.style.textAlign = 'center';
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                if (toast.parentNode) document.body.removeChild(toast);
-            }, 500);
-        }, 3000);
-    }
-
-    /**
      * Remove a highlight by index
      * @param {Number} index Index of highlight to remove
      */
@@ -274,7 +214,7 @@ export default function useHighlighter(options) {
      */
     function saveHighlights(reference = '') {
         try {
-            localStorage.setItem(`highlights-${reference || 'page'}`, JSON.stringify({
+            localStorage.setItem(`${STORAGE_CONFIG.HIGHLIGHTS_PREFIX}${reference || 'page'}`, JSON.stringify({
                 highlights: highlights.value,
                 html: contentContainer.value?.innerHTML
             }));
@@ -289,7 +229,7 @@ export default function useHighlighter(options) {
      */
     function loadHighlights(reference = '') {
         try {
-            const stored = localStorage.getItem(`highlights-${reference || 'page'}`);
+            const stored = localStorage.getItem(`${STORAGE_CONFIG.HIGHLIGHTS_PREFIX}${reference || 'page'}`);
 
             if (stored) {
                 const data = JSON.parse(stored);
@@ -327,7 +267,7 @@ export default function useHighlighter(options) {
 
         // Remove from localStorage
         try {
-            localStorage.removeItem(`highlights-${reference || 'page'}`);
+            localStorage.removeItem(`${STORAGE_CONFIG.HIGHLIGHTS_PREFIX}${reference || 'page'}`);
         } catch (error) {
             console.error('Error clearing highlights from storage:', error);
         }

@@ -24,7 +24,7 @@ module.exports = defineConfig({
       orientation: "portrait",
       lang: "it"
     },
-    workboxPluginMode: 'InjectManifest',
+    workboxPluginMode: 'GenerateSW',
     workboxOptions: {
       skipWaiting: true,
       clientsClaim: true

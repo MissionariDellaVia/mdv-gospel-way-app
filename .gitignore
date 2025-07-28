@@ -2,6 +2,10 @@
 node_modules
 /dist
 
+# Temporary files
+/tmp
+*.tmp
+*.temp
 
 # local env files
 .env.local
@@ -21,3 +25,25 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Backup files
+*.bak
+*.backup
+
+# OS generated files
+Thumbs.db
+ehthumbs.db

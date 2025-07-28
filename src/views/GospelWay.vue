@@ -31,7 +31,7 @@
             @click="decreaseZoom"
             class="zoom-button"
             aria-label="Riduci dimensione testo"
-            :disabled="zoomLevel <= 80">
+            :disabled="!canDecreaseZoom()">
           <i class="fa-solid fa-minus"></i>
         </button>
         <span class="zoom-level">{{ zoomLevel }}%</span>
@@ -39,7 +39,7 @@
             @click="increaseZoom"
             class="zoom-button"
             aria-label="Aumenta dimensione testo"
-            :disabled="zoomLevel >= 200">
+            :disabled="!canIncreaseZoom()">
           <i class="fa-solid fa-plus"></i>
         </button>
       </div>
@@ -94,15 +94,11 @@
 <script setup>
 import GwGospelText from '@/components/GwGospelText.vue'
 import GwEmbedVideo from "@/components/GwEmbedVideo";
-import { ref, defineProps, onMounted, onUnmounted, computed, watchEffect } from 'vue'
+import { ref, defineProps, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import GwConnectedText from "@/components/GwConnectedText";
 import ScrollToTopButton from "@/components/ui/ScrollToTopButton.vue";
-
-// Add state for controlling zoom controls visibility
-const showZoomControls = ref(false);
-// Add auto-hide timer
-let hideTimeout = null;
+import useZoom from '@/composables/useZoom';
 
 const props = defineProps({
   date: String
@@ -111,10 +107,17 @@ const props = defineProps({
 const store = useStore()
 const dialog = ref(false)
 const isLoading = ref(false)
-// Initialize zoom level with stored preference or default to 100%
-const zoomLevel = ref(
-    parseInt(localStorage.getItem('preferredZoomLevel')) || 100
-)
+
+// Use zoom composable
+const {
+  showZoomControls,
+  zoomLevel,
+  toggleZoomControls,
+  increaseZoom,
+  decreaseZoom,
+  canIncreaseZoom,
+  canDecreaseZoom
+} = useZoom();
 
 const textDate = computed(() => store.getters['page/textDate']);
 const liturgy = computed(() => store.getters['page/liturgy']);
@@ -122,90 +125,8 @@ const currentGospelWay = computed(() => store.getters['page/todayGospelWay']);
 const connected = computed(() => store.getters['page/connectedGospelWay']);
 const videos = computed(() => store.getters['page/connectedVideos']);
 
-// Toggle zoom controls visibility
-function toggleZoomControls() {
-  showZoomControls.value = !showZoomControls.value;
-
-  // Clear any existing timeout
-  if (hideTimeout) {
-    clearTimeout(hideTimeout);
-  }
-
-  // Set auto-hide timer when shown
-  if (showZoomControls.value) {
-    hideTimeout = setTimeout(() => {
-      showZoomControls.value = false;
-    }, 5000); // Hide after 5 seconds of inactivity
-  }
-}
-
-// Reset auto-hide timer on zoom interactions
-function resetHideTimer() {
-  if (hideTimeout) {
-    clearTimeout(hideTimeout);
-  }
-
-  if (showZoomControls.value) {
-    hideTimeout = setTimeout(() => {
-      showZoomControls.value = false;
-    }, 5000);
-  }
-}
-
-// Save zoom preference when it changes
-watchEffect(() => {
-  try {
-    localStorage.setItem('preferredZoomLevel', zoomLevel.value.toString());
-  } catch (error) {
-    console.warn('Could not save zoom preference:', error);
-  }
-});
-
-// Methods for zoom functionality
-function increaseZoom() {
-  if (zoomLevel.value < 200) {
-    zoomLevel.value += 10;
-    resetHideTimer();
-  }
-}
-
-function decreaseZoom() {
-  if (zoomLevel.value > 80) {
-    zoomLevel.value -= 10;
-    resetHideTimer();
-  }
-}
-
-// Add keyboard shortcuts for zoom
-function handleKeyboard(event) {
-  // Ctrl + Plus to zoom in
-  if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
-    event.preventDefault();
-    increaseZoom();
-    showZoomControls.value = true;
-    resetHideTimer();
-  }
-  // Ctrl + Minus to zoom out
-  if (event.ctrlKey && event.key === '-') {
-    event.preventDefault();
-    decreaseZoom();
-    showZoomControls.value = true;
-    resetHideTimer();
-  }
-}
-
 onMounted(() => {
   loadPage(props.date);
-  // Add keyboard event listener
-  window.addEventListener('keydown', handleKeyboard);
-});
-
-// Clean up event listener and timeout
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyboard);
-  if (hideTimeout) {
-    clearTimeout(hideTimeout);
-  }
 });
 
 async function loadPage(date) {
@@ -252,9 +173,9 @@ function cleanDialogPreghiera() {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #6e4f3a;
-  color: #d3b282;
-  border: 2px solid #d3b282;
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
+  border: 2px solid var(--color-text-light);
   box-shadow: 0 4px 12px rgba(40, 29, 2, 0.25);
   display: flex;
   align-items: center;
@@ -271,12 +192,12 @@ function cleanDialogPreghiera() {
 }
 
 .zoom-toggle:hover {
-  background-color: #7d5c45;
+  background-color: var(--color-3);
   transform: translateY(-2px);
 }
 
 .zoom-toggle.expanded {
-  background-color: #58412b;
+  background-color: var(--color-2);
   transform: rotate(180deg);
 }
 
@@ -287,8 +208,8 @@ function cleanDialogPreghiera() {
   right: 65px;
   display: flex;
   align-items: center;
-  background-color: #6e4f3a;
-  border: 2px solid #d3b282;
+  background-color: var(--color-primary);
+  border: 2px solid var(--color-text-light);
   border-radius: 20px;
   padding: 8px 12px;
   z-index: 100;
@@ -299,9 +220,9 @@ function cleanDialogPreghiera() {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid #d3b282;
-  background-color: #6e4f3a;
-  color: #d3b282;
+  border: 1px solid var(--color-text-light);
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -310,7 +231,7 @@ function cleanDialogPreghiera() {
 }
 
 .zoom-button:hover {
-  background-color: #7d5c45;
+  background-color: var(--color-3);
   transform: translateY(-2px);
 }
 
@@ -322,7 +243,7 @@ function cleanDialogPreghiera() {
 
 .zoom-level {
   margin: 0 10px;
-  color: #d3b282;
+  color: var(--color-text-light);
   font-size: 14px;
   min-width: 40px;
   text-align: center;
