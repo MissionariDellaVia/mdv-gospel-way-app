@@ -5,7 +5,7 @@
       <slot></slot>
     </div>
 
-    <!-- Control panel with buttons and color selection -->
+    <!-- Control panel with buttons -->
     <div class="highlighter-controls" ref="controlBar">
       <!-- Main button group -->
       <HighlightControls
@@ -15,14 +15,6 @@
           @toggle-mode="toggleHighlightMode"
           @show-collection="showCollection = true"
           @export-highlights="exportHighlights"
-      />
-
-      <!-- Color selection (appears when text is selected) -->
-      <ColorSelection
-          v-if="showColorSelection && highlightMode"
-          :colors="highlightColors"
-          @apply-color="applyHighlight"
-          @cancel="cancelSelection"
       />
     </div>
 
@@ -67,7 +59,6 @@
 <script>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import HighlightControls from './HighlightControls.vue';
-import ColorSelection from './ColorSelection.vue';
 import HighlightCollection from './HighlightCollection.vue';
 import useHighlighter from '@/composables/useHighlighter';
 import useExporter from '@/composables/useExporter';
@@ -76,7 +67,6 @@ export default {
   name: 'TextHighlighter',
   components: {
     HighlightControls,
-    ColorSelection,
     HighlightCollection
   },
   props: {
@@ -105,7 +95,6 @@ export default {
     const controlBar = ref(null);
 
     const highlightMode = ref(false);
-    const showColorSelection = ref(false);
     const showCollection = ref(false);
     const showExportDialog = ref(false);
     const selectedRange = ref(null);
@@ -114,14 +103,8 @@ export default {
     const exportLoading = ref(false);
     const isMobile = ref(false);
 
-    // Color palette
-    const highlightColors = [
-      { name: 'Giallo', value: 'rgba(255, 230, 0, 0.35)' },
-      { name: 'Azzurro', value: 'rgba(0, 176, 255, 0.35)' },
-      { name: 'Rosa', value: 'rgba(255, 121, 168, 0.35)' },
-      { name: 'Verde', value: 'rgba(0, 230, 118, 0.35)' },
-      { name: 'Viola', value: 'rgba(187, 107, 217, 0.35)' }
-    ];
+    // Default highlight color (yellow)
+    const defaultHighlightColor = 'rgba(255, 230, 0, 0.35)';
 
     // Formatted date for UI display
     const formattedDate = computed(() => {
@@ -147,8 +130,7 @@ export default {
       highlightMode,
       selectedRange,
       highlights,
-      highlightId,
-      showColorSelection
+      highlightId
     });
 
     const exporter = useExporter({
@@ -191,37 +173,15 @@ export default {
             
             if (validRange) {
                 selectedRange.value = validRange;
-                showColorSelection.value = true;
                 
-                // Scroll to controls for better UX
-                setTimeout(() => scrollToControlBar(), 100);
-            } else {
-                // Only cancel if not clicking UI elements
-                const activeElement = document.activeElement;
-                const isUIClick = activeElement && (
-                    activeElement.closest('.color-selection-bar') ||
-                    activeElement.closest('.export-dialog') ||
-                    activeElement.closest('.highlighter-controls')
-                );
-                
-                if (!isUIClick) {
-                    cancelSelection();
-                }
+                // Auto-apply default color immediately
+                applyHighlight(defaultHighlightColor);
             }
         }, 100); // Unified timeout for all devices
     }
 
-    function scrollToControlBar() {
-        if (controlBar.value) {
-            const rect = controlBar.value.getBoundingClientRect();
-            if (rect.bottom > window.innerHeight || rect.top < 0) {
-                controlBar.value.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
-            }
-        }
-    }
+    // Remove unused function
+    // function scrollToControlBar() { ... }
 
     // ====================================
     // HIGHLIGHT METHODS
@@ -377,11 +337,10 @@ export default {
 
       // State
       highlightMode,
-      showColorSelection,
       showCollection,
       showExportDialog,
       highlights,
-      highlightColors,
+      defaultHighlightColor,
       exportLoading,
       isMobile,
 

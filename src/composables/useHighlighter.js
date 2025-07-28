@@ -3,8 +3,7 @@ export default function useHighlighter(options) {
         contentContainer,
         selectedRange,
         highlights,
-        highlightId,
-        showColorSelection
+        highlightId
     } = options;
 
     // ====================================
@@ -152,7 +151,6 @@ export default function useHighlighter(options) {
         }
         
         selectedRange.value = null;
-        showColorSelection.value = false;
     }
 
     // ====================================
