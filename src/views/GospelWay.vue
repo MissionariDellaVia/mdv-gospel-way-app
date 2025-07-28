@@ -173,9 +173,9 @@ function cleanDialogPreghiera() {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #6e4f3a;
-  color: #d3b282;
-  border: 2px solid #d3b282;
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
+  border: 2px solid var(--color-text-light);
   box-shadow: 0 4px 12px rgba(40, 29, 2, 0.25);
   display: flex;
   align-items: center;
@@ -192,12 +192,12 @@ function cleanDialogPreghiera() {
 }
 
 .zoom-toggle:hover {
-  background-color: #7d5c45;
+  background-color: var(--color-3);
   transform: translateY(-2px);
 }
 
 .zoom-toggle.expanded {
-  background-color: #58412b;
+  background-color: var(--color-2);
   transform: rotate(180deg);
 }
 
@@ -208,8 +208,8 @@ function cleanDialogPreghiera() {
   right: 65px;
   display: flex;
   align-items: center;
-  background-color: #6e4f3a;
-  border: 2px solid #d3b282;
+  background-color: var(--color-primary);
+  border: 2px solid var(--color-text-light);
   border-radius: 20px;
   padding: 8px 12px;
   z-index: 100;
@@ -220,9 +220,9 @@ function cleanDialogPreghiera() {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid #d3b282;
-  background-color: #6e4f3a;
-  color: #d3b282;
+  border: 1px solid var(--color-text-light);
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,7 +231,7 @@ function cleanDialogPreghiera() {
 }
 
 .zoom-button:hover {
-  background-color: #7d5c45;
+  background-color: var(--color-3);
   transform: translateY(-2px);
 }
 
@@ -243,7 +243,7 @@ function cleanDialogPreghiera() {
 
 .zoom-level {
   margin: 0 10px;
-  color: #d3b282;
+  color: var(--color-text-light);
   font-size: 14px;
   min-width: 40px;
   text-align: center;

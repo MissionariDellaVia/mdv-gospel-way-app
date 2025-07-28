@@ -109,21 +109,27 @@ export default function useToast() {
 
         return {
             ...baseStyles,
-            backgroundColor: `rgba(${_hexToRgb(typeColors[type])}, 0.9)`
+            backgroundColor: _getBackgroundColor(typeColors[type])
         };
     }
 
     /**
-     * Convert hex color to RGB values
+     * Convert hex color to RGB values or use CSS variables
      * @private
-     * @param {string} hex - Hex color
-     * @returns {string} RGB values
+     * @param {string} hex - Hex color or CSS variable
+     * @returns {string} RGB values or CSS variable
      */
-    function _hexToRgb(hex) {
+    function _getBackgroundColor(hex) {
+        // If it's already a CSS variable, return as is with opacity
+        if (hex.startsWith('var(')) {
+            return hex;
+        }
+        
+        // Convert hex to RGB for backward compatibility
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result 
-            ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
-            : '0, 0, 0';
+            ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, 0.9)`
+            : 'rgba(0, 0, 0, 0.9)';
     }
 
     /**

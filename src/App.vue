@@ -57,40 +57,67 @@ useMeta({
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300&family=Questrial&display=swap');
 
+/* CSS Custom Properties for theme colors */
+:root {
+  --color-primary: #6E4F3A;
+  --color-secondary: #281D02FF;
+  --color-accent: #A67D51;
+  --color-text-light: #d3b282;
+  --color-text-dark: #281D02FF;
+  --color-background: #6E4F3A;
+  --color-success: #28a745;
+  --color-error: #dc3545;
+  --color-warning: #ffc107;
+  --color-info: #17a2b8;
+  
+  /* Legacy color variables for backward compatibility */
+  --color-1: #281D02FF;
+  --color-2: #472b21;
+  --color-3: #6e4f3a;
+  --color-4: #A67D51;
+  --color-5: #d3b282;
+  --color-6: #908286;
+  
+  /* Font variables */
+  --font-primary: 'Barlow Semi Condensed', sans-serif;
+  --font-secondary: 'Questrial', sans-serif;
+}
+
+/* Updated classes to use CSS custom properties */
 .color1 {
-  color: #281D02FF;
+  color: var(--color-1);
 }
 
 .color2 {
-  color: #472b21;
+  color: var(--color-2);
 }
 
 .color3 {
-  color: #6e4f3a;
+  color: var(--color-3);
 }
 
 .color4 {
-  color: #A67D51;
+  color: var(--color-4);
 }
 
 .color5 {
-  color: #d3b282;
+  color: var(--color-5);
 }
 
 .color6 {
-  color: #908286;
+  color: var(--color-6);
 }
 
 body {
-  background-color: #6E4F3A !important;
+  background-color: var(--color-primary) !important;
 }
 
 #app {
-  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #d3b282;
+  color: var(--color-text-light);
   overflow-x: hidden;
 }
 
@@ -114,8 +141,8 @@ hr {
 
 .fade-hr {
   height: 0.15rem;
-  color: #281D02FF;
-  background-image: linear-gradient(90deg, rgba(255, 0, 0, 0), #a67d51 50%, rgba(255, 0, 0, 0) 100%);
+  color: var(--color-secondary);
+  background-image: linear-gradient(90deg, rgba(255, 0, 0, 0), var(--color-accent) 50%, rgba(255, 0, 0, 0) 100%);
 }
 
 .clickable {
@@ -159,8 +186,8 @@ hr {
   top: 0;
   left: 0;
   right: 0;
-  background-color: #A67D51;
-  color: #281D02FF;
+  background-color: var(--color-accent);
+  color: var(--color-secondary);
   text-align: center;
   padding: 12px;
   font-size: 14px;
@@ -169,8 +196,8 @@ hr {
 }
 
 .update-button {
-  background-color: #281D02FF;
-  color: #d3b282;
+  background-color: var(--color-secondary);
+  color: var(--color-text-light);
   border: none;
   border-radius: 4px;
   padding: 5px 10px;
@@ -181,7 +208,7 @@ hr {
 }
 
 .update-button:hover {
-  background-color: #472b21;
+  background-color: var(--color-2);
 }
 
 /* Only apply focus styles when not using touch */
