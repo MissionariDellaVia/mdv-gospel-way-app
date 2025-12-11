@@ -12,6 +12,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import 'vue3-carousel/dist/carousel.css';
 import "bootstrap/dist/css/bootstrap.min.css";
 import './assets/styles/mobile-selection.css';
+import './assets/styles/animations.css';
 import 'bootstrap';
 
 // Base component
@@ -20,6 +21,7 @@ import BaseDialog from '@/components/ui/BaseDialog.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ScrollToTopButton from '@/components/ui/ScrollToTopButton.vue'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import './registerServiceWorker'
 
 const app = createApp(App)
@@ -43,7 +45,8 @@ app.component('base-button', BaseButton);
 app.component('base-dialog', BaseDialog);
 app.component('base-spinner', BaseSpinner);
 app.component('vue-date-picker', VueDatePicker);
-app.component('ScrollToTopButton', ScrollToTopButton)
+app.component('ScrollToTopButton', ScrollToTopButton);
+app.component('skeleton-loader', SkeletonLoader)
 
 // Immediately execute cleanup code here, without relying on store dispatch
 console.log("Starting legacy storage cleanup...");

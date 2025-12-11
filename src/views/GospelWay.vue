@@ -17,6 +17,29 @@
       </p>
     </base-dialog>
 
+    <!-- Saved highlights button (top right) - shows only when there are highlights -->
+    <HighlightSavedButton
+        v-if="!isLoading"
+        :count="highlightCount"
+        @click="showSavedHighlights"
+    />
+
+    <!-- Highlight FAB (above zoom) - simple toggle only -->
+    <HighlightToggleButton
+        v-if="!isLoading"
+        @toggle="onHighlightToggle"
+    />
+
+    <!-- Saved Highlights Modal -->
+    <HighlightCollection
+        v-if="showCollection"
+        :highlights="allHighlights"
+        :formatted-date="formattedDate"
+        @close="showCollection = false"
+        @remove="onRemoveHighlight"
+        @export="onExportHighlights"
+    />
+
     <!-- Zoom toggle button - consistently on right side -->
     <div class="zoom-toggle" @click="toggleZoomControls" :class="{ 'expanded': showZoomControls }">
       <i class="fa-solid fa-text-height"></i>
@@ -45,10 +68,12 @@
       </div>
     </transition>
 
-    <div v-if="isLoading">
-      <base-spinner></base-spinner>
-    </div>
-    <section v-else>
+    <!-- Skeleton loader durante il caricamento -->
+    <skeleton-loader v-if="isLoading" variant="gospel" />
+
+    <!-- Contenuto con transizione fade -->
+    <transition name="content-fade">
+    <section v-if="!isLoading">
       <header>
         <h1 class="color3 mt-5 text-center"> Vangelo del Giorno</h1>
         <h4 class="my-2 color3 text-center "> {{ liturgy }}</h4>
@@ -64,30 +89,35 @@
       <hr class="fade-hr my-5 mx-auto">
 
       <gw-gospel-text
-          :evangelist="currentGospelWay.evangelist"
-          :textRef="currentGospelWay.textRef"
-          :gospel="currentGospelWay.text"
-          :comment="currentGospelWay.comment"
+          ref="gospelTextRef"
+          :evangelist="currentGospelWay.gospel?.evangelist"
+          :textRef="currentGospelWay.gospel?.reference"
+          :gospel="currentGospelWay.gospel?.text"
+          :comment="currentGospelWay.comments?.main"
           :textDate="textDate"
-          :extra="currentGospelWay.video ? null : currentGospelWay.extra"
+          :extra="videos?.length ? null : currentGospelWay.comments?.reflection"
           :clean="true"
           :show-divider="true"
           :zoom-level="zoomLevel"
+          :highlight-mode="highlightMode"
+          @highlight-count-change="onHighlightCountChange"
+          @highlights-change="onHighlightsChange"
       />
 
       <gw-embed-video
-          v-show="videos"
+          v-if="videos && videos.length > 0"
           title="Video"
           :related="videos"
           :show-divider="true"
       />
 
       <gw-connected-text
-          v-show="connected"
+          v-if="connected && connected.length > 0"
           :relatedData="connected"
           :zoom-level="zoomLevel"
       />
     </section>
+    </transition>
   </base-card>
 </template>
 
@@ -98,11 +128,31 @@ import { ref, defineProps, onMounted, onUnmounted, computed, watchEffect } from 
 import { useStore } from 'vuex'
 import GwConnectedText from "@/components/GwConnectedText";
 import ScrollToTopButton from "@/components/ui/ScrollToTopButton.vue";
+import HighlightToggleButton from "@/components/ui/HighlightToggleButton.vue";
+import HighlightSavedButton from "@/components/ui/HighlightSavedButton.vue";
+import HighlightCollection from "@/components/text/HighlightCollection.vue";
 
 // Add state for controlling zoom controls visibility
 const showZoomControls = ref(false);
 // Add auto-hide timer
 let hideTimeout = null;
+
+// Highlight state
+const highlightMode = ref(false);
+const highlightCount = ref(0);
+const allHighlights = ref([]);
+const showCollection = ref(false);
+const gospelTextRef = ref(null);
+
+// Formatted date for collection display
+const formattedDate = computed(() => {
+  const options = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  };
+  return new Date().toLocaleDateString('it-IT', options);
+});
 
 const props = defineProps({
   date: String
@@ -225,6 +275,43 @@ function showDialogPreghiera() {
 function cleanDialogPreghiera() {
   dialog.value = false;
 }
+
+// Highlight handlers
+function onHighlightToggle(active) {
+  highlightMode.value = active;
+}
+
+function onHighlightCountChange(count) {
+  highlightCount.value = count;
+}
+
+function onHighlightsChange(highlights) {
+  allHighlights.value = highlights;
+}
+
+function showSavedHighlights() {
+  // Refresh the highlights list before showing
+  if (gospelTextRef.value) {
+    allHighlights.value = gospelTextRef.value.getAllHighlights();
+  }
+  showCollection.value = true;
+}
+
+function onRemoveHighlight(index) {
+  // Find the highlight by index in the aggregated list
+  const highlight = allHighlights.value[index];
+  if (highlight && gospelTextRef.value) {
+    gospelTextRef.value.removeHighlight(highlight.section, highlight.sectionIndex);
+    // Refresh the highlights list
+    allHighlights.value = gospelTextRef.value.getAllHighlights();
+  }
+}
+
+function onExportHighlights() {
+  if (gospelTextRef.value) {
+    gospelTextRef.value.showExportOptions();
+  }
+}
 </script>
 
 <style scoped>
@@ -244,73 +331,69 @@ function cleanDialogPreghiera() {
   color: #866a2f;
 }
 
-/* Zoom toggle button */
+/* Zoom toggle button - bottom of the stack with safe-area */
 .zoom-toggle {
   position: fixed;
-  bottom: 24px;
-  right: 15px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #6e4f3a;
-  color: #d3b282;
-  border: 2px solid #d3b282;
-  box-shadow: 0 4px 12px rgba(40, 29, 2, 0.25);
+  bottom: calc(20px + var(--safe-bottom, 0px));
+  right: max(15px, var(--safe-right, 0px));
+  /* 48px touch target */
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-light);
+  border: 2px solid var(--color-light);
+  box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 101;
-  transition: all 0.3s ease;
-}
-
-/* Override the scroll-to-top button position */
-:deep(.custom-scroll-top) {
-  bottom: 70px !important;
-  right: 15px !important;
+  transition: all var(--transition-normal);
 }
 
 .zoom-toggle:hover {
-  background-color: #7d5c45;
+  background-color: var(--color-dark);
   transform: translateY(-2px);
 }
 
 .zoom-toggle.expanded {
-  background-color: #58412b;
+  background-color: var(--color-dark);
   transform: rotate(180deg);
 }
 
 /* Zoom controls styling */
 .zoom-controls {
   position: fixed;
-  bottom: 24px;
-  right: 65px;
+  bottom: calc(20px + var(--safe-bottom, 0px));
+  right: calc(70px + var(--safe-right, 0px));
   display: flex;
   align-items: center;
-  background-color: #6e4f3a;
-  border: 2px solid #d3b282;
-  border-radius: 20px;
-  padding: 8px 12px;
+  background-color: var(--color-primary);
+  border: 2px solid var(--color-light);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-sm) var(--spacing-md);
   z-index: 100;
-  box-shadow: 0 4px 12px rgba(40, 29, 2, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 .zoom-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid #d3b282;
-  background-color: #6e4f3a;
-  color: #d3b282;
+  /* 48px touch target */
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-light);
+  background-color: var(--color-primary);
+  color: var(--color-light);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
 }
 
 .zoom-button:hover {
-  background-color: #7d5c45;
+  background-color: var(--color-dark);
   transform: translateY(-2px);
 }
 
@@ -321,10 +404,10 @@ function cleanDialogPreghiera() {
 }
 
 .zoom-level {
-  margin: 0 10px;
-  color: #d3b282;
+  margin: 0 var(--spacing-sm);
+  color: var(--color-light);
   font-size: 14px;
-  min-width: 40px;
+  min-width: 45px;
   text-align: center;
 }
 
@@ -337,5 +420,50 @@ function cleanDialogPreghiera() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Content fade transition */
+.content-fade-enter-active {
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.content-fade-leave-active {
+  transition: opacity 0.2s ease-in;
+}
+
+.content-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.content-fade-leave-to {
+  opacity: 0;
+}
+
+/* Mobile - maintain 48px touch targets */
+@media (max-width: 480px) {
+  .zoom-toggle {
+    bottom: calc(18px + var(--safe-bottom, 0px));
+    right: max(12px, var(--safe-right, 0px));
+    width: var(--touch-target-min, 48px);
+    height: var(--touch-target-min, 48px);
+  }
+
+  .zoom-controls {
+    bottom: calc(18px + var(--safe-bottom, 0px));
+    right: calc(65px + var(--safe-right, 0px));
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .zoom-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .zoom-level {
+    font-size: 13px;
+    min-width: 38px;
+    margin: 0 var(--spacing-xs);
+  }
 }
 </style>

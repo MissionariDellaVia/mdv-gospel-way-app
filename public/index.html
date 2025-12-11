@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <meta name="google-site-verification" content="LbHd1ZAaGtNJnji-TfJZi0k-Yd0sL9CbYrUoFFAlzyM" />
 
@@ -12,11 +12,16 @@
     <meta name="theme-color" content="#6E4F3A">
     <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    connect-src 'self' https://corsproxy.io http://www.missionaridellavia.net;
-     img-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data; frame-src 'self' http://www.youtube.com https://www.youtube.com;">
-    <!-- iOS specific meta tags -->
+    connect-src 'self' https://*.supabase.co https://corsproxy.io http://www.missionaridellavia.net;
+    img-src 'self' data: https://*.supabase.co;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com data:;
+    frame-src 'self' http://www.youtube.com https://www.youtube.com;">
+    <!-- iOS/PWA specific meta tags -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="La Via del Vangelo">
     <meta name="app-version" content="<%= process.env.VUE_APP_VERSION %>">
 

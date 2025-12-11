@@ -1,5 +1,5 @@
 <template>
-  <div class="collection-modal">
+  <div class="collection-modal" @click.self="$emit('close')">
     <div class="collection-content">
       <div class="collection-header">
         <h3>Le tue evidenziazioni</h3>
@@ -10,22 +10,26 @@
 
       <div class="collection-body">
         <p v-if="!highlights.length" class="no-highlights">
-          Nessuna evidenziazione. Attiva la modalità evidenziazione per selezionare parti del testo.
+          Nessuna evidenziazione salvata.<br>
+          Tocca il pulsante <i class="fa-solid fa-highlighter"></i> per evidenziare parti del testo.
         </p>
 
         <div v-else class="highlights-list">
           <div
               v-for="(highlight, index) in highlights"
-              :key="index"
+              :key="highlight.id || index"
               class="highlight-item"
           >
             <div
                 class="highlight-color"
                 :style="{ backgroundColor: highlight.color }"
             ></div>
-            <div class="highlight-text">{{ highlight.text }}</div>
+            <div class="highlight-content">
+              <span v-if="highlight.sectionLabel" class="highlight-section">{{ highlight.sectionLabel }}</span>
+              <div class="highlight-text">{{ highlight.text }}</div>
+            </div>
             <div class="highlight-actions">
-              <button @click="$emit('remove', index)" class="remove-btn">
+              <button @click="$emit('remove', index)" class="remove-btn" title="Rimuovi">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
@@ -40,8 +44,8 @@
             @click="$emit('export')"
             class="export-modal-btn"
         >
-          <i class="fa-solid fa-file-export"></i>
-          Esporta come immagine
+          <i class="fa-solid fa-share-from-square"></i>
+          Esporta
         </button>
       </div>
     </div>
@@ -149,25 +153,40 @@ export default {
 
 .highlight-item {
   display: flex;
-  align-items: center;
-  padding: 15px;
+  align-items: stretch;
+  padding: 12px;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .highlight-color {
-  width: 5px;
-  height: 50px;
-  border-radius: 3px;
-  margin-right: 15px;
+  width: 4px;
+  min-height: 40px;
+  border-radius: 2px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.highlight-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.highlight-section {
+  font-size: 0.75rem;
+  color: #A67D51;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .highlight-text {
-  flex: 1;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #3e2723;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .highlight-actions {

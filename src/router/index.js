@@ -1,9 +1,8 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
 
+// Lazy loading for better initial bundle size
+// Home is loaded eagerly as it's the landing page
 import MdvHome from '@/views/MdvHome.vue';
-import AboutUs from '@/views/AboutUs.vue';
-import GospelWay from '@/views/GospelWay.vue';
-import TestTextHighlighter from '@/views/TestTextHighlighter.vue';
 
 const routes = [
     {
@@ -14,18 +13,15 @@ const routes = [
     {
         path: '/chi-siamo',
         name: 'AboutUs',
-        component: AboutUs
+        // Lazy loaded - reduces initial bundle
+        component: () => import(/* webpackChunkName: "about" */ '@/views/AboutUs.vue')
     },
     {
         path: '/via-del-vangelo/:date',
         name: 'GospelWay',
         props: true,
-        component: GospelWay
-    },
-    {
-        path: '/test-texthighlighter',
-        name: 'TestTextHighlighter',
-        component: TestTextHighlighter
+        // Lazy loaded - main content page
+        component: () => import(/* webpackChunkName: "gospel" */ '@/views/GospelWay.vue')
     },
     {path: '/:notFound(.*)', component: MdvHome}
 ]

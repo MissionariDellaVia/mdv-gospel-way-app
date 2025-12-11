@@ -313,57 +313,69 @@ export default {
 }
 </script>
 <style scoped>
-/* Simple help button container */
+/* Help button with safe-area support */
 .help-button-container {
-  position: absolute;
-  top: 15px;
-  left: 15px;
+  position: fixed;
+  top: calc(15px + var(--safe-top, 0px));
+  left: max(15px, var(--safe-left, 0px));
   z-index: 7000;
 }
 
-/* Simple minimalist help button */
+/* Help button - 48px touch target, coerente con altri FAB */
 .help-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #A67D51;
-  color: #281D02;
-  border: none;
+  position: relative;
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-light);
+  border: 2px solid var(--color-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 1.2rem;
+  box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s;
+  transition: all var(--transition-normal);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .help-button:hover {
-  background: #b28a5a;
+  background: var(--color-light);
+  color: var(--color-darkest);
   transform: translateY(-2px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
 }
 
 .help-button:active, .help-button.active {
-  transform: translateY(0);
-  background: #996c45;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transform: scale(0.95);
+  background: var(--color-light);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Pulse animation for new hints */
+/* Pulse animation for new hints - coerente con altri FAB */
 .help-button.pulse-notification {
-  animation: button-pulse 2s infinite;
+  animation: help-pulse 2s infinite;
 }
 
-@keyframes button-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(211, 178, 130, 0.7);
+.help-button.pulse-notification::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  background: #e74c3c;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-primary);
+}
+
+@keyframes help-pulse {
+  0%, 100% {
+    box-shadow: var(--shadow-md), 0 0 0 0 rgba(166, 125, 81, 0.4);
   }
-  70% {
-    box-shadow: 0 0 0 8px rgba(211, 178, 130, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(211, 178, 130, 0);
+  50% {
+    box-shadow: var(--shadow-md), 0 0 0 8px rgba(166, 125, 81, 0);
   }
 }
 
@@ -482,8 +494,13 @@ h3 {
 
 @media (max-width: 768px) {
   .help-button-container {
-    top: 10px;
-    left: 10px;
+    top: calc(10px + var(--safe-top, 0px));
+    left: max(10px, var(--safe-left, 0px));
+  }
+
+  .help-button {
+    width: var(--touch-target-min, 48px);
+    height: var(--touch-target-min, 48px);
   }
 
   .hint-menu {

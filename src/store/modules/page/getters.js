@@ -12,7 +12,8 @@ export default {
         return state.saint;
     },
     liturgy(state) {
-        return state.liturgy;
+        // V2: liturgical_season è disponibile anche nel gospel_daily
+        return state.liturgy || state.todayGospelWay?.liturgical_season;
     },
     allowedDates(state) {
         return state.allowedDates;

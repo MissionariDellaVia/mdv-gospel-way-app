@@ -1,37 +1,78 @@
 <template>
-  <button class="btn action-button rounded"> {{ title }}</button>
+  <button class="btn action-button rounded" :class="{ 'loading': loading }">
+    <span v-if="loading" class="spinner"></span>
+    <span :class="{ 'opacity-0': loading }">{{ title }}</span>
+  </button>
 </template>
 
 <script>
 export default {
-  props: ['title']
+  props: {
+    title: String,
+    loading: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
 
 
 <style scoped>
 .action-button {
+  position: relative;
   color: #fff;
-  padding: 0.7em 1.7em;
+  padding: 0.8em 1.8em;
   width: 18rem;
-  border-color: transparent;
+  border: none;
   font-size: 1.2rem;
-  background-color: #908286;
-  transition: all .1s;
-  -webkit-box-shadow: 3px 4px 15px -5px #7E7E7E;
-  box-shadow: 3px 4px 15px -5px #7E7E7E;
+  font-weight: 500;
+  /* No default background - let parent classes (bg-1, bg-2) control color */
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .action-button:hover {
-  filter: brightness(130%);
-  transform: scale(0.97);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.1);
 }
 
 .action-button:focus {
-  filter: brightness(140%);
-  transform: scale(0.93);
-  border-color: transparent;
-  color: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.action-button.loading {
+  pointer-events: none;
+}
+
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.opacity-0 {
+  opacity: 0;
 }
 
 /* Medium devices (tablets, 768px and up)  */

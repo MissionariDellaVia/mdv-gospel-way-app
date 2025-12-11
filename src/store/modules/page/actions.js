@@ -63,14 +63,14 @@ export default {
             const cachedData = await StorageService.getItem(cacheKey);
             if (cachedData && cachedData.date === date && !StorageService.isExpired(cachedData.timestamp, CACHE_CONFIG.GOSPEL.expiry)) {
                 console.debug("Using cached gospel for date:", date);
-                const parsedData = cachedData.data;
-                context.commit('setTodayGospelWay', parsedData.today);
-                context.commit('setConnectedGospelWay', parsedData.connected);
-                context.commit('setConnectedVideos', parsedData.videos);
-                return parsedData;
+                const data = cachedData.data;
+                context.commit('setTodayGospelWay', data);
+                context.commit('setConnectedGospelWay', data.related || []);
+                context.commit('setConnectedVideos', data.media?.videos || []);
+                return data;
             }
 
-            // Fetch from API if cache miss or expired
+            // Fetch from API if cache miss or expired (V2 format)
             const responseData = await ApiService.getGospelWay(date);
 
             // Update cache
@@ -80,9 +80,10 @@ export default {
                 timestamp: Date.now()
             });
 
-            context.commit('setTodayGospelWay', responseData.today);
-            context.commit('setConnectedGospelWay', responseData.connected);
-            context.commit('setConnectedVideos', responseData.videos);
+            // V2 format: data is flat, not nested in "today"
+            context.commit('setTodayGospelWay', responseData);
+            context.commit('setConnectedGospelWay', responseData.related || []);
+            context.commit('setConnectedVideos', responseData.media?.videos || []);
             return responseData;
         } catch (error) {
             console.error("Error in loadGospelWay:", error);

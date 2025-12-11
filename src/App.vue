@@ -57,32 +57,101 @@ useMeta({
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300&family=Questrial&display=swap');
 
+/* ============================================
+   CSS CUSTOM PROPERTIES (Design System)
+   ============================================ */
+:root {
+  /* Color Palette */
+  --color-darkest: #281D02;
+  --color-dark: #472b21;
+  --color-primary: #6e4f3a;
+  --color-accent: #A67D51;
+  --color-light: #d3b282;
+  --color-muted: #908286;
+
+  /* Semantic Colors */
+  --color-text: var(--color-light);
+  --color-text-muted: var(--color-muted);
+  --color-background: var(--color-primary);
+  --color-surface: rgba(255, 246, 217, 0.95);
+  --color-border: var(--color-accent);
+
+  /* Safe Areas for iPhone notch/Dynamic Island */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Touch Targets (minimum 48px for accessibility) */
+  --touch-target-min: 48px;
+  --touch-target-sm: 44px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(40, 29, 2, 0.15);
+  --shadow-md: 0 4px 12px rgba(40, 29, 2, 0.25);
+  --shadow-lg: 0 8px 24px rgba(40, 29, 2, 0.3);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+}
+
+/* Legacy color classes (for backward compatibility) */
 .color1 {
-  color: #281D02FF;
+  color: var(--color-darkest);
 }
 
 .color2 {
-  color: #472b21;
+  color: var(--color-dark);
 }
 
 .color3 {
-  color: #6e4f3a;
+  color: var(--color-primary);
 }
 
 .color4 {
-  color: #A67D51;
+  color: var(--color-accent);
 }
 
 .color5 {
-  color: #d3b282;
+  color: var(--color-light);
 }
 
 .color6 {
-  color: #908286;
+  color: var(--color-muted);
 }
 
 body {
-  background-color: #6E4F3A !important;
+  background-color: var(--color-primary) !important;
+  /* Safe area padding for notched devices */
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 #app {
@@ -90,8 +159,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #d3b282;
+  color: var(--color-text);
   overflow-x: hidden;
+  /* Ensure minimum height accounts for safe areas */
+  min-height: calc(100vh - var(--safe-top) - var(--safe-bottom));
 }
 
 .logo-img {

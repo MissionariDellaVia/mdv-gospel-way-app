@@ -321,31 +321,37 @@ export default {
 </script>
 
 <style scoped>
+/* ===================================
+   Install Banner - PWA Install Prompt
+   With safe-area support & CSS vars
+   =================================== */
+
 .install-banner {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to bottom, #583a2f, #472b21);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  /* Safe area support for iPhone home indicator */
+  bottom: var(--safe-bottom, 0px);
+  left: var(--safe-left, 0px);
+  right: var(--safe-right, 0px);
+  background: linear-gradient(to bottom, var(--color-primary, #6e4f3a), var(--color-dark, #472b21));
+  box-shadow: var(--shadow-lg, 0 -4px 20px rgba(0, 0, 0, 0.4));
   z-index: 9990;
-  border-top: 2px solid #A67D51;
+  border-top: 2px solid var(--color-accent, #A67D51);
   padding: 0;
   overflow: hidden;
 }
 
 .install-banner.android {
-  background: linear-gradient(to bottom, #472b21, #362018);
-  border-top-color: #b28a5a;
+  background: linear-gradient(to bottom, var(--color-dark, #472b21), var(--color-darkest, #281D02));
+  border-top-color: var(--color-light, #d3b282);
 }
 
 .install-banner.desktop {
   max-width: 480px;
   left: auto;
-  right: 20px;
-  bottom: 20px;
-  border-radius: 16px;
-  border: 2px solid #A67D51;
+  right: max(20px, var(--safe-right, 0px));
+  bottom: max(20px, var(--safe-bottom, 0px));
+  border-radius: var(--radius-xl, 16px);
+  border: 2px solid var(--color-accent, #A67D51);
 }
 
 .banner-content {
@@ -354,7 +360,7 @@ export default {
   align-items: center;
   max-width: 800px;
   margin: 0 auto;
-  padding: 16px 20px;
+  padding: var(--spacing-md, 16px) var(--spacing-lg, 20px);
   position: relative;
 }
 
@@ -366,25 +372,26 @@ export default {
 }
 
 .app-icon {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #A67D51, #d3b282);
-  border-radius: 10px;
+  /* 48px touch target */
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  background: linear-gradient(135deg, var(--color-accent, #A67D51), var(--color-light, #d3b282));
+  border-radius: var(--radius-md, 10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
+  margin-right: var(--spacing-md, 16px);
   flex-shrink: 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm, 0 2px 5px rgba(0, 0, 0, 0.2));
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
 }
 
 .app-icon span {
-  color: #281D02;
+  color: var(--color-darkest, #281D02);
   font-weight: bold;
-  font-size: 22px;
+  font-size: 24px;
   position: relative;
   z-index: 1;
 }
@@ -423,14 +430,14 @@ export default {
 .banner-text h3 {
   margin: 0 0 5px 0;
   font-size: 18px;
-  color: #d3b282;
+  color: var(--color-light, #d3b282);
   font-weight: 600;
 }
 
 .banner-text p {
   margin: 0;
   font-size: 14px;
-  color: #d3b282;
+  color: var(--color-light, #d3b282);
   opacity: 0.9;
   line-height: 1.3;
 }
@@ -439,45 +446,47 @@ export default {
 .banner-actions {
   display: flex;
   align-items: center;
-  margin-left: 15px;
+  margin-left: var(--spacing-md, 15px);
+  gap: var(--spacing-sm, 8px);
 }
 
 .install-button {
-  background: linear-gradient(to bottom, #b28a5a, #A67D51);
-  color: #281D02;
+  background: linear-gradient(to bottom, var(--color-light, #d3b282), var(--color-accent, #A67D51));
+  color: var(--color-darkest, #281D02);
   border: none;
-  padding: 10px 18px;
-  border-radius: 20px;
+  /* Minimum 48px touch target */
+  min-height: var(--touch-target-min, 48px);
+  padding: var(--spacing-sm, 10px) var(--spacing-lg, 18px);
+  border-radius: var(--radius-full, 24px);
   cursor: pointer;
   font-weight: bold;
   font-size: 15px;
-  margin-right: 12px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal, 0.2s ease);
   display: flex;
   align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  justify-content: center;
+  box-shadow: var(--shadow-sm, 0 2px 5px rgba(0, 0, 0, 0.2));
+  -webkit-tap-highlight-color: transparent;
 }
 
 .install-button.android {
-  background: #A67D51;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: var(--color-accent, #A67D51);
+  border-radius: var(--radius-md, 8px);
 }
 
 .install-button:hover {
-  background: linear-gradient(to bottom, #c69b6a, #b28a5a);
+  background: linear-gradient(to bottom, #c9a882, var(--color-light, #d3b282));
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md, 0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 .install-button.android:hover {
-  background: #b28a5a;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  background: var(--color-light, #d3b282);
 }
 
 .install-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transform: scale(0.97);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .install-button.pulse {
@@ -516,57 +525,76 @@ export default {
 
 .remind-button {
   background: transparent;
-  border: 1px solid #A67D51;
-  color: #A67D51;
-  padding: 8px 14px;
-  border-radius: 20px;
+  border: 2px solid var(--color-accent, #A67D51);
+  color: var(--color-accent, #A67D51);
+  /* Minimum 48px touch target */
+  min-height: var(--touch-target-min, 48px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 14px);
+  border-radius: var(--radius-full, 20px);
   cursor: pointer;
   font-size: 14px;
-  margin-right: 12px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal, 0.2s ease);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .remind-button.android {
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
 }
 
 .remind-button:hover {
-  background-color: rgba(166, 125, 81, 0.1);
-  color: #d3b282;
+  background-color: rgba(166, 125, 81, 0.15);
+  color: var(--color-light, #d3b282);
+  border-color: var(--color-light, #d3b282);
+}
+
+.remind-button:active {
+  transform: scale(0.97);
 }
 
 .close-button {
   background: transparent;
   border: none;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  /* 48px touch target */
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-full, 50%);
+  transition: all var(--transition-fast, 0.15s ease);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .close-button:hover {
-  background-color: rgba(166, 125, 81, 0.1);
+  background-color: rgba(166, 125, 81, 0.15);
+}
+
+.close-button:active {
+  transform: scale(0.95);
 }
 
 .close-icon {
   position: relative;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .close-icon:before,
 .close-icon:after {
   content: '';
   position: absolute;
-  width: 16px;
+  width: 18px;
   height: 2px;
-  background-color: #A67D51;
+  background-color: var(--color-accent, #A67D51);
   top: 50%;
   left: 0;
+  transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.close-button:hover .close-icon:before,
+.close-button:hover .close-icon:after {
+  background-color: var(--color-light, #d3b282);
 }
 
 .close-icon:before {
@@ -590,7 +618,7 @@ export default {
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(to right, #A67D51, #d3b282);
+  background: linear-gradient(to right, var(--color-accent, #A67D51), var(--color-light, #d3b282));
   transition: width 0.1s linear;
 }
 
@@ -601,87 +629,97 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(40, 29, 2, 0.8);
   z-index: 9995;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: var(--spacing-lg, 20px);
+  /* Safe area support */
+  padding-top: max(var(--spacing-lg, 20px), var(--safe-top, 0px));
+  padding-bottom: max(var(--spacing-lg, 20px), var(--safe-bottom, 0px));
 }
 
 .guide-container {
-  background-color: #472b21;
-  border-radius: 16px;
-  border: 2px solid #A67D51;
+  background-color: var(--color-dark, #472b21);
+  border-radius: var(--radius-xl, 16px);
+  border: 2px solid var(--color-accent, #A67D51);
   width: 100%;
   max-width: 380px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-xl, 0 5px 30px rgba(0, 0, 0, 0.5));
 }
 
 .guide-container.android {
-  border-radius: 14px;
+  border-radius: var(--radius-lg, 14px);
 }
 
 .guide-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #583a2f;
+  padding: var(--spacing-md, 16px) var(--spacing-lg, 20px);
+  border-bottom: 1px solid var(--color-primary, #6e4f3a);
   position: relative;
   text-align: center;
 }
 
 .guide-header h3 {
   margin: 0;
-  color: #d3b282;
+  color: var(--color-light, #d3b282);
   font-size: 18px;
   font-weight: 600;
 }
 
 .close-guide-button {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   background: transparent;
   border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  /* 48px touch target */
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  border-radius: var(--radius-full, 50%);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--transition-fast, 0.15s ease);
 }
 
 .close-guide-button:hover {
-  background-color: rgba(166, 125, 81, 0.1);
+  background-color: rgba(166, 125, 81, 0.15);
+}
+
+.close-guide-button:active {
+  transform: scale(0.95);
 }
 
 .guide-content {
-  padding: 20px;
+  padding: var(--spacing-lg, 20px);
 }
 
 .guide-step {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-xl, 24px);
 }
 
 .step-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background-color: #A67D51;
-  color: #281D02;
-  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-accent, #A67D51);
+  color: var(--color-darkest, #281D02);
+  border-radius: var(--radius-full, 50%);
   font-weight: bold;
   font-size: 16px;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-sm, 12px);
 }
 
 .step-content p {
-  color: #d3b282;
-  margin: 0 0 14px 0;
+  color: var(--color-light, #d3b282);
+  margin: 0 0 var(--spacing-md, 14px) 0;
   line-height: 1.4;
   font-size: 15px;
 }
@@ -883,14 +921,14 @@ export default {
 
 .note {
   background-color: rgba(166, 125, 81, 0.1);
-  border-left: 4px solid #A67D51;
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin-top: 20px;
+  border-left: 4px solid var(--color-accent, #A67D51);
+  padding: var(--spacing-sm, 12px) var(--spacing-md, 16px);
+  border-radius: var(--radius-sm, 4px);
+  margin-top: var(--spacing-lg, 20px);
 }
 
 .note p {
-  color: #d3b282;
+  color: var(--color-light, #d3b282);
   margin: 0;
   font-size: 14px;
   line-height: 1.4;
@@ -898,8 +936,8 @@ export default {
 
 /* Guide footer */
 .guide-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #583a2f;
+  padding: var(--spacing-md, 16px) var(--spacing-lg, 20px);
+  border-top: 1px solid var(--color-primary, #6e4f3a);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -907,30 +945,37 @@ export default {
 
 .dont-show-again {
   font-size: 14px;
-  color: #A67D51;
+  color: var(--color-accent, #A67D51);
   display: flex;
   align-items: center;
   cursor: pointer;
 }
 
 .dont-show-again input {
-  margin-right: 8px;
+  margin-right: var(--spacing-sm, 8px);
 }
 
 .guide-button {
-  background-color: #A67D51;
-  color: #281D02;
+  background-color: var(--color-accent, #A67D51);
+  color: var(--color-darkest, #281D02);
   border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
+  /* Minimum 48px touch target */
+  min-height: var(--touch-target-min, 48px);
+  padding: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
+  border-radius: var(--radius-md, 8px);
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal, 0.2s ease);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .guide-button:hover {
-  background-color: #b28a5a;
-  transform: translateY(-1px);
+  background-color: var(--color-light, #d3b282);
+  transform: translateY(-2px);
+}
+
+.guide-button:active {
+  transform: scale(0.97);
 }
 
 /* Animation for pulsing highlight */
@@ -940,13 +985,13 @@ export default {
 
 @keyframes pulse-effect {
   0% {
-    box-shadow: 0 0 0 0 rgba(26, 115, 232, 0.4);
+    box-shadow: 0 0 0 0 rgba(166, 125, 81, 0.4);
   }
   70% {
-    box-shadow: 0 0 0 6px rgba(26, 115, 232, 0);
+    box-shadow: 0 0 0 8px rgba(166, 125, 81, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(26, 115, 232, 0);
+    box-shadow: 0 0 0 0 rgba(166, 125, 81, 0);
   }
 }
 
@@ -955,15 +1000,16 @@ export default {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(166, 125, 81, 0.5);
+    transform: scale(1.03);
+    box-shadow: var(--shadow-md, 0 4px 10px rgba(166, 125, 81, 0.5));
   }
 }
 
-/* Transitions */
+/* Transitions - using smooth easing */
 .banner-slide-enter-active,
 .banner-slide-leave-active {
-  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  transition: transform 0.3s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+              opacity 0.3s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
 .banner-slide-enter-from,
@@ -980,7 +1026,7 @@ export default {
 
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.3s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
 .modal-fade-enter-from,
@@ -988,15 +1034,16 @@ export default {
   opacity: 0;
 }
 
-/* Mobile styles */
+/* Mobile styles - optimized for touch */
 @media (max-width: 600px) {
   .banner-content {
     flex-direction: column;
-    padding: 16px 16px 20px 16px;
+    padding: var(--spacing-md, 16px);
+    padding-bottom: var(--spacing-lg, 20px);
   }
 
   .banner-info {
-    margin-bottom: 16px;
+    margin-bottom: var(--spacing-md, 16px);
     width: 100%;
   }
 
@@ -1010,11 +1057,6 @@ export default {
   .remind-button {
     flex: 1;
     justify-content: center;
-    margin-right: 8px;
-  }
-
-  .close-button {
-    margin-left: 4px;
   }
 
   .guide-container {
@@ -1023,21 +1065,21 @@ export default {
 
   .guide-footer {
     flex-direction: column;
-    gap: 16px;
+    gap: var(--spacing-md, 16px);
   }
 
   .guide-button {
     width: 100%;
-    padding: 12px;
+    padding: var(--spacing-sm, 12px);
   }
 }
 
-/* For very small screens */
+/* For very small screens - maintain 48px touch targets */
 @media (max-width: 380px) {
   .app-icon {
-    width: 36px;
-    height: 36px;
-    margin-right: 12px;
+    width: 42px;
+    height: 42px;
+    margin-right: var(--spacing-sm, 12px);
   }
 
   .banner-text h3 {
@@ -1050,12 +1092,29 @@ export default {
 
   .install-button,
   .remind-button {
-    padding: 8px;
+    /* Maintain minimum touch target */
+    min-height: var(--touch-target-min, 48px);
+    padding: var(--spacing-sm, 8px) var(--spacing-sm, 8px);
     font-size: 13px;
   }
 
   .install-icon {
     margin-right: 4px;
+  }
+}
+
+/* Accessibility - reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-highlight,
+  .install-button.pulse {
+    animation: none !important;
+  }
+
+  .banner-slide-enter-active,
+  .banner-slide-leave-active,
+  .modal-fade-enter-active,
+  .modal-fade-leave-active {
+    transition-duration: 0.01ms !important;
   }
 }
 </style>

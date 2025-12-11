@@ -23,7 +23,7 @@ export default function useHighlighter(options) {
      * @returns {Boolean} True if device is mobile
      */
     function isMobile() {
-        return window.matchMedia('(pointer: coarse)').matches || 
+        return window.matchMedia('(pointer: coarse)').matches ||
                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 
@@ -36,31 +36,48 @@ export default function useHighlighter(options) {
     }
 
     /**
+     * Trigger haptic feedback on supported devices
+     */
+    function triggerHapticFeedback() {
+        if ('vibrate' in navigator) {
+            navigator.vibrate(10); // Short vibration for feedback
+        }
+    }
+
+    /**
      * Add cross-platform fixes for text selection
+     * Minimal styles to avoid layout shift
      */
     function addSelectionFixes() {
         if (document.getElementById('selection-fix')) return;
-        
+
         const style = document.createElement('style');
         style.id = 'selection-fix';
         style.textContent = `
+            /* Base selection enablement */
             .highlightable-content {
                 -webkit-user-select: text !important;
                 -moz-user-select: text !important;
                 -ms-user-select: text !important;
                 user-select: text !important;
             }
+
             .highlight-mode-active .highlightable-content {
                 -webkit-touch-callout: default !important;
-                -webkit-tap-highlight-color: rgba(166, 125, 81, 0.2) !important;
                 cursor: text !important;
             }
+
             .highlight-mode-active .highlightable-content * {
                 -webkit-user-select: text !important;
                 -moz-user-select: text !important;
-                -ms-user-select: text !important;
                 user-select: text !important;
-                pointer-events: auto !important;
+            }
+
+            /* Touch device handling */
+            @media (pointer: coarse) {
+                .highlight-mode-active .highlightable-content {
+                    touch-action: manipulation !important;
+                }
             }
         `;
         document.head.appendChild(style);
@@ -208,9 +225,7 @@ export default function useHighlighter(options) {
             highlightSpan.className = 'text-highlight';
             highlightSpan.id = newId;
             highlightSpan.style.backgroundColor = color;
-            highlightSpan.style.borderRadius = '3px';
-            highlightSpan.style.padding = '1px 2px';
-            highlightSpan.style.margin = '0 1px';
+            // No padding/margin to avoid text displacement
             highlightSpan.style.display = 'inline';
             highlightSpan.style.boxDecorationBreak = 'clone';
             highlightSpan.style.webkitBoxDecorationBreak = 'clone';
@@ -259,34 +274,36 @@ export default function useHighlighter(options) {
      * @param {String} message Success message to display
      */
     function showSuccessMessage(message) {
+        // Trigger haptic feedback on mobile
+        triggerHapticFeedback();
+
         const toast = document.createElement('div');
         toast.className = 'highlight-success';
         toast.textContent = message;
         toast.style.cssText = `
             position: fixed;
-            top: 50%;
+            bottom: 80px;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
             background-color: rgba(40, 167, 69, 0.9);
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 10px 18px;
+            border-radius: 20px;
             z-index: 2000;
             font-size: 14px;
-            max-width: 90%;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            font-family: 'Barlow Semi Condensed', sans-serif;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         `;
 
         document.body.appendChild(toast);
 
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s';
+            toast.style.transition = 'opacity 0.3s';
             setTimeout(() => {
                 if (toast.parentNode) document.body.removeChild(toast);
-            }, 500);
-        }, 2000);
+            }, 300);
+        }, 1200);
     }
 
     /**

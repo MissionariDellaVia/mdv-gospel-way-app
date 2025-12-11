@@ -1,28 +1,52 @@
 /* Mobile selection enhancements */
-@media (max-width: 768px) {
-    /* Make text more selectable on touch devices */
+
+/* Base selection styles - non invasive */
+.highlightable-content {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
+
+/* Highlight mode active state - minimal changes to avoid layout shift */
+.highlight-mode-active .highlightable-content {
+    -webkit-touch-callout: default !important;
+    cursor: text !important;
+    /* Subtle background instead of border to avoid layout shift */
+    background-color: rgba(166, 125, 81, 0.03);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.highlight-mode-active .highlightable-content * {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+
+/* Selection color customization */
+.highlight-mode-active .highlightable-content::selection,
+.highlight-mode-active .highlightable-content *::selection {
+    background-color: rgba(166, 125, 81, 0.35);
+    color: inherit;
+}
+
+.highlight-mode-active .highlightable-content::-moz-selection,
+.highlight-mode-active .highlightable-content *::-moz-selection {
+    background-color: rgba(166, 125, 81, 0.35);
+    color: inherit;
+}
+
+/* iOS specific - only selection behavior, no layout changes */
+@supports (-webkit-touch-callout: none) {
     .highlight-mode-active .highlightable-content {
         -webkit-user-select: text !important;
-        user-select: text !important;
-        -webkit-touch-callout: default !important;
-        cursor: text !important;
-    }
-
-    /* Better spacing for touch selection */
-    .highlight-mode-active .highlightable-content p,
-    .highlight-mode-active .highlightable-content div {
-        line-height: 1.8 !important;
-        margin-bottom: 1em !important;
-    }
-
-    /* Special handling for iOS */
-    .ios .highlight-mode-active .highlightable-content {
-        -webkit-user-select: text !important;
         -webkit-touch-callout: default !important;
     }
+}
 
-    /* Visual indicator for selection mode */
-    .highlight-mode-active.has-selection .highlightable-content {
-        background-color: rgba(178, 163, 72, 0.1) !important;
+/* Touch device improvements - no layout changes */
+@media (pointer: coarse) {
+    .highlight-mode-active .highlightable-content {
+        touch-action: manipulation;
     }
 }

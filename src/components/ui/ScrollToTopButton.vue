@@ -51,22 +51,24 @@ export default {
 <style scoped>
 .scroll-to-top-btn {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: #6e4f3a; /* Slightly darker than the previous color */
-  color: #d3b282; /* Light gold color for better contrast */
-  border: 2px solid #d3b282;
-  box-shadow: 0 4px 12px rgba(40, 29, 2, 0.25);
+  /* Stack position with safe-area support */
+  bottom: calc(124px + var(--safe-bottom, 0px));
+  right: max(15px, var(--safe-right, 0px));
+  /* Minimum touch target 48px */
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-light);
+  border: 2px solid var(--color-light);
+  box-shadow: var(--shadow-md);
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   z-index: v-bind('zIndex');
-  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  opacity: 0.9;
+  transition: all var(--transition-normal);
+  opacity: 0.95;
 }
 
 .scroll-to-top-btn i {
@@ -95,12 +97,13 @@ export default {
   transform: scale(0.85) translateY(10px);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .scroll-to-top-btn {
-    bottom: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
+    /* Maintain 48px touch target on mobile */
+    bottom: calc(120px + var(--safe-bottom, 0px));
+    right: max(12px, var(--safe-right, 0px));
+    width: var(--touch-target-min, 48px);
+    height: var(--touch-target-min, 48px);
   }
 }
 </style>

@@ -13,6 +13,7 @@
 
 <script setup>
 import {computed, defineProps} from 'vue'
+import DOMPurify from 'dompurify'
 
 const props = defineProps({
   title: String,
@@ -26,8 +27,13 @@ const props = defineProps({
 })
 
 const cleanedText = computed(() => {
-  let c = props.text?.replace(/style="font-family:.*;"/gm, '');
-  return c?.replaceAll(/IMG\d/gm, '');
+  if (!props.text) return '';
+  // Rimuove placeholder IMG (legacy) e sanitizza HTML per sicurezza
+  const cleaned = props.text.replaceAll(/IMG\d/gm, '');
+  return DOMPurify.sanitize(cleaned, {
+    ALLOWED_TAGS: ['p', 'div', 'span', 'strong', 'em', 'b', 'i', 'a', 'br', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    ALLOWED_ATTR: ['href', 'target', 'style', 'class']
+  });
 })
 
 // Calculate sizes based on zoom level

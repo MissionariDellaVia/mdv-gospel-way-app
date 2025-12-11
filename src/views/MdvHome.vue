@@ -1,41 +1,49 @@
 <template>
   <base-card v-touch:swipe="handleSwipe">
-    <div v-if="isLoading">
-      <base-spinner></base-spinner>
-    </div>
+    <!-- Skeleton loader durante il caricamento iniziale -->
+    <skeleton-loader v-if="isLoading" variant="home" />
 
+    <!-- Contenuto con transizione fade -->
+    <transition name="content-fade">
+    <div v-if="!isLoading">
     <header class="row mt-5 mb-3">
       <div class="col-12 header-section text-center">
-        <div class="d-flex justify-content-center align-items-center">
-          <i class="fa-solid fa-chevron-left home-icon px-2" @click="handleDateChange(false, true, null)"></i>
-          <h1 class="color3">{{ textDate || 'Data corrente' }}</h1>
-          <i class="fa-solid fa-chevron-right home-icon px-2" @click="handleDateChange(true, false, null)"></i>
-        </div>
-      </div>
-      <div class="col-12 header-section text-center datepicker-container">
-        <vue-date-picker
-            v-if="isDatePickerReady"
-            v-model="currentDate"
-            :enable-time-picker="false"
-            :max-date="allowedDates && allowedDates.length ? allowedDates[0] : new Date()"
-            hide-offset-dates
-            auto-apply
-            :position="position"
-            :teleport="false"
-            :inline-position="position"
-            menu-class-name="centered-datepicker"
-            calendar-class-name="custom-calendar"
-            calendar-cell-class-name="dp-custom-cell"
-            @open="onDatePickerOpen"
-            @update:model-value="handleDateChange(false, false, currentDate)">
-          <template #trigger>
-            <i class="fa-regular fa-calendar-days home-icon calendar-icon"></i>
-          </template>
-        </vue-date-picker>
+        <!-- Skeleton per header durante cambio data -->
+        <skeleton-loader v-if="isLoadingDate" variant="home-header" />
+
+        <!-- Contenuto header reale -->
+        <template v-else>
+          <div class="d-flex justify-content-center align-items-center">
+            <i class="fa-solid fa-chevron-left home-icon px-2" @click="handleDateChange(false, true, null)"></i>
+            <h1 class="color3">{{ textDate || 'Data corrente' }}</h1>
+            <i class="fa-solid fa-chevron-right home-icon px-2" @click="handleDateChange(true, false, null)"></i>
+          </div>
+          <div class="datepicker-container">
+            <vue-date-picker
+                v-if="isDatePickerReady"
+                v-model="currentDate"
+                :enable-time-picker="false"
+                :max-date="allowedDates && allowedDates.length ? allowedDates[0] : new Date()"
+                hide-offset-dates
+                auto-apply
+                :position="position"
+                :teleport="false"
+                :inline-position="position"
+                menu-class-name="centered-datepicker"
+                calendar-class-name="custom-calendar"
+                calendar-cell-class-name="dp-custom-cell"
+                @open="onDatePickerOpen"
+                @update:model-value="handleDateChange(false, false, currentDate)">
+              <template #trigger>
+                <i class="fa-regular fa-calendar-days home-icon calendar-icon"></i>
+              </template>
+            </vue-date-picker>
+          </div>
+        </template>
       </div>
     </header>
 
-    <section class="row header-section text-center">
+    <section class="row header-section text-center" v-if="!isLoadingDate">
       <div v-if="saint" class="col-12">
         <h3 class="color5 fw-bold">{{ saint }}</h3>
       </div>
@@ -64,6 +72,8 @@
         puoi richiederlo <a href="mailto:missionaridellavia.cassano@gmail.com">scrivendoci</a>
       </p>
     </section>
+    </div>
+    </transition>
   </base-card>
 </template>
 
@@ -82,6 +92,7 @@ export default {
     return {
       currentDate: new Date(),
       isLoading: false,
+      isLoadingDate: false,
       error: null,
       position: 'center',
       currentUser: 'Alessandro-Mac7',
@@ -140,21 +151,34 @@ export default {
       }
     },
     async handleDateChange(add, subtract, date) {
+      this.isLoadingDate = true;
       this.$store.dispatch('page/changeDay', {
         add: add,
         subtract: subtract,
         fullDate: date
       });
-      await this.loadHomeInfo();
-    },
-    async loadHomeInfo() {
       try {
-        this.isLoading = true;
         await this.$store.dispatch('page/loadHomeInfo');
       } catch (error) {
         this.handleError(error);
       } finally {
-        this.isLoading = false;
+        this.isLoadingDate = false;
+      }
+    },
+    async loadHomeInfo(showLoader = false) {
+      try {
+        // Only show skeleton on initial load, not on date changes
+        if (showLoader) {
+          this.isLoading = true;
+        }
+        await this.$store.dispatch('page/loadHomeInfo');
+      } catch (error) {
+        this.handleError(error);
+      } finally {
+        // Only reset loading state if we set it
+        if (showLoader) {
+          this.isLoading = false;
+        }
       }
     },
     async loadAllowedDates() {
@@ -467,5 +491,19 @@ a {
   &:hover {
     color: #b28555;
   }
+}
+
+/* Content fade transition - only opacity, no movement */
+.content-fade-enter-active {
+  transition: opacity 0.3s ease-out;
+}
+
+.content-fade-leave-active {
+  transition: opacity 0.15s ease-in;
+}
+
+.content-fade-enter-from,
+.content-fade-leave-to {
+  opacity: 0;
 }
 </style>

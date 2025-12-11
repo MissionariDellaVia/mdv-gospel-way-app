@@ -4,8 +4,8 @@
         :show="!!show"
         :title="title"
         @close="cleanDialogConnected">
-      <div class="html-raw my-1" v-html="content"></div>
-      <div class="html-raw my-1" v-html="extra"></div>
+      <div class="html-raw my-1" v-html="sanitizedContent"></div>
+      <div class="html-raw my-1" v-html="sanitizedExtra"></div>
     </base-dialog>
 
     <section v-show="relatedData && relatedData.length > 0">
@@ -14,7 +14,7 @@
       </div>
       <div v-for="(c,index) in relatedData" v-bind:key="index" class="col-12 text-center">
         <p class="clickable conn-p"
-               @click="showDialogConnected(c.date, c.comment, c.extra)">
+               @click="showDialogConnected(c.date, c.comments?.main, c.comments?.reflection)">
           Commento del {{ getTextDate(c.date) }}
         </p>
       </div>
@@ -25,7 +25,8 @@
 </template>
 
 <script setup>
-import {ref, defineProps} from 'vue';
+import {ref, defineProps, computed} from 'vue';
+import DOMPurify from 'dompurify';
 
 defineProps({
   relatedData: Array,
@@ -37,6 +38,20 @@ const content = ref(null)
 const extra = ref(null)
 const months = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
+// Sanitizzazione HTML per sicurezza
+const sanitizeOptions = {
+  ALLOWED_TAGS: ['p', 'div', 'span', 'strong', 'em', 'b', 'i', 'a', 'br', 'ul', 'ol', 'li', 'blockquote'],
+  ALLOWED_ATTR: ['href', 'target', 'style', 'class']
+};
+
+const sanitizedContent = computed(() =>
+  content.value ? DOMPurify.sanitize(content.value, sanitizeOptions) : ''
+);
+
+const sanitizedExtra = computed(() =>
+  extra.value ? DOMPurify.sanitize(extra.value, sanitizeOptions) : ''
+);
+
 function getTextDate(textDate) {
   let date = new Date(textDate)
   return date.getDate()
@@ -47,12 +62,8 @@ function getTextDate(textDate) {
 function showDialogConnected(textDate, comment, extraComment) {
   show.value = true;
   title.value = 'Commento del ' + getTextDate(textDate)
-  if (comment) {
-    content.value = comment?.replace(/style="font-family:.*;"/gm,'')
-  }
-  if (extraComment) {
-    extra.value = extraComment?.replace(/style="font-family:.*;"/gm,'')
-  }
+  content.value = comment || null
+  extra.value = extraComment || null
 }
 
 function cleanDialogConnected() {

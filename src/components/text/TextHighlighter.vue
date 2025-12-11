@@ -1,21 +1,8 @@
 <template>
-  <div class="highlighter-wrapper" :class="{'highlight-mode-active': highlightMode}">
+  <div class="highlighter-wrapper" :class="{'highlight-mode-active': highlightModeActive}">
     <!-- Content container with highlighting capability -->
     <div ref="contentContainer" class="highlightable-content">
       <slot></slot>
-    </div>
-
-    <!-- Control panel with buttons -->
-    <div class="highlighter-controls" ref="controlBar">
-      <!-- Main button group -->
-      <HighlightControls
-          :highlight-mode="highlightMode"
-          :has-highlights="hasHighlights"
-          :highlight-count="highlights.length"
-          @toggle-mode="toggleHighlightMode"
-          @show-collection="showCollection = true"
-          @export-highlights="exportHighlights"
-      />
     </div>
 
     <!-- Collection modal -->
@@ -58,7 +45,6 @@
 
 <script>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
-import HighlightControls from './HighlightControls.vue';
 import HighlightCollection from './HighlightCollection.vue';
 import useHighlighter from '@/composables/useHighlighter';
 import useExporter from '@/composables/useExporter';
@@ -66,7 +52,6 @@ import useExporter from '@/composables/useExporter';
 export default {
   name: 'TextHighlighter',
   components: {
-    HighlightControls,
     HighlightCollection
   },
   props: {
@@ -85,16 +70,25 @@ export default {
     textRef: {
       type: String,
       default: ''
+    },
+    // External control props
+    highlightMode: {
+      type: Boolean,
+      default: false
+    },
+    highlightColor: {
+      type: String,
+      default: 'rgba(255, 230, 0, 0.35)'
     }
   },
-  setup(props) {
+  emits: ['highlight-count-change'],
+  setup(props, { emit }) {
     // ====================================
     // STATE MANAGEMENT
     // ====================================
     const contentContainer = ref(null);
     const controlBar = ref(null);
 
-    const highlightMode = ref(false);
     const showCollection = ref(false);
     const showExportDialog = ref(false);
     const selectedRange = ref(null);
@@ -103,8 +97,11 @@ export default {
     const exportLoading = ref(false);
     const isMobile = ref(false);
 
-    // Default highlight color (yellow)
-    const defaultHighlightColor = 'rgba(255, 230, 0, 0.35)';
+    // Use prop for highlight mode state (controlled externally)
+    const highlightModeActive = computed(() => props.highlightMode);
+
+    // Use prop for highlight color (controlled externally)
+    const currentHighlightColor = computed(() => props.highlightColor);
 
     // Formatted date for UI display
     const formattedDate = computed(() => {
@@ -127,7 +124,7 @@ export default {
     const highlighter = useHighlighter({
       contentContainer,
       controlBar,
-      highlightMode,
+      highlightMode: highlightModeActive,
       selectedRange,
       highlights,
       highlightId
@@ -159,7 +156,7 @@ export default {
     const selectionTimeout = ref(null);
 
     function handleTextSelection() {
-        if (!highlightMode.value) return;
+        if (!highlightModeActive.value) return;
 
         // Clear any existing timeout
         if (selectionTimeout.value) {
@@ -170,12 +167,12 @@ export default {
         selectionTimeout.value = setTimeout(() => {
             const selection = highlighter.getCurrentSelection();
             const validRange = highlighter.handleTextSelection(selection);
-            
+
             if (validRange) {
                 selectedRange.value = validRange;
-                
-                // Auto-apply default color immediately
-                applyHighlight(defaultHighlightColor);
+
+                // Auto-apply with current color from props
+                applyHighlight(currentHighlightColor.value);
             }
         }, 100); // Unified timeout for all devices
     }
@@ -222,13 +219,7 @@ export default {
       showExportOptions();
     }
 
-    function toggleHighlightMode() {
-        highlightMode.value = !highlightMode.value;
-        
-        if (!highlightMode.value) {
-            cancelSelection();
-        }
-    }
+    // toggleHighlightMode is now controlled externally via props
 
     // ====================================
     // UI NOTIFICATION HELPERS
@@ -270,10 +261,10 @@ export default {
         // Use a unified approach for all devices
         document.addEventListener('mouseup', handleTextSelection);
         document.addEventListener('touchend', handleTextSelection, { passive: true });
-        
+
         // Also listen for selection changes for better mobile support
         document.addEventListener('selectionchange', () => {
-            if (highlightMode.value) {
+            if (highlightModeActive.value) {
                 // Small delay to allow selection to stabilize
                 setTimeout(() => {
                     const selection = highlighter.getCurrentSelection();
@@ -329,6 +320,18 @@ export default {
       }
     });
 
+    // Watch for highlight count changes and emit to parent
+    watch(() => highlights.value.length, (count) => {
+      emit('highlight-count-change', count);
+    }, { immediate: true });
+
+    // Watch for highlight mode changes to cancel selection when deactivated
+    watch(() => props.highlightMode, (active) => {
+      if (!active) {
+        cancelSelection();
+      }
+    });
+
     return {
       // Refs
       contentContainer,
@@ -336,20 +339,22 @@ export default {
       selectionTimeout,
 
       // State
-      highlightMode,
+      highlightModeActive,
       showCollection,
       showExportDialog,
       highlights,
-      defaultHighlightColor,
+      currentHighlightColor,
       exportLoading,
       isMobile,
 
       // Computed
       hasHighlights,
       formattedDate,
+      highlightCount: computed(() => highlights.value.length),
 
-      // Methods
-      toggleHighlightMode,
+      // Methods (exposed for external control)
+      openCollection: () => { showCollection.value = true; },
+      closeCollection: () => { showCollection.value = false; },
       applyHighlight,
       cancelSelection,
       removeHighlight,
@@ -363,24 +368,18 @@ export default {
 </script>
 
 <style>
-/* Global styles for the highlighted text elements */
+/* Global styles for the highlighted text elements - NO layout changes */
 .text-highlight {
-  border-radius: 2px;
-  padding: 0 1px;
-  transition: all 0.2s ease;
-  /* Improve highlight appearance */
+  /* No padding/margin to prevent text displacement */
+  display: inline;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-  /* Ensure highlights work well with line breaks */
-  display: inline;
-  /* Better visual feedback */
-  cursor: pointer;
+  transition: background-color 0.2s ease;
+  cursor: default;
 }
 
 .text-highlight:hover {
-  filter: brightness(1.1);
-  /* Add subtle shadow on hover */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  filter: brightness(1.05);
 }
 
 /* Make highlights work with the font styles in GwRawText */
@@ -396,34 +395,16 @@ export default {
   text-decoration: inherit;
 }
 
-/* Mobile enhancements for touch selection */
+/* Mobile enhancements for touch selection - NO layout changes */
 @media (max-width: 768px) {
   .highlight-mode-active .highlightable-content {
     -webkit-user-select: text !important;
     user-select: text !important;
     -webkit-touch-callout: default !important;
-    /* Improve touch selection on mobile */
-    -webkit-tap-highlight-color: rgba(166, 125, 81, 0.1) !important;
-    /* Prevent zoom on selection */
     touch-action: manipulation !important;
   }
 
-  .highlightable-content {
-    touch-action: auto !important;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
-    /* Better spacing for touch selection */
-    line-height: 1.6 !important;
-  }
-
-  /* Increase spacing for easier touch selection */
-  .highlight-mode-active .highlightable-content p {
-    line-height: 1.8 !important;
-    margin-bottom: 0.8em !important;
-    /* Add padding for easier selection */
-    padding: 2px 0 !important;
-  }
-
-  /* Improve mobile selection visibility */
+  /* Selection color customization */
   .highlight-mode-active .highlightable-content::selection {
     background-color: rgba(166, 125, 81, 0.3);
     color: inherit;
@@ -450,19 +431,10 @@ export default {
 
 .highlight-mode-active .highlightable-content {
   cursor: text;
-  padding: 8px;
-  background-color: rgba(166, 125, 81, 0.05);
-  border-radius: 8px;
-  transition: background-color 0.3s;
-}
-
-.highlighter-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 10px 0;
-  position: relative;
-  align-items: center;
+  /* Subtle background only - no padding to avoid layout shift */
+  background-color: rgba(166, 125, 81, 0.04);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 /* Export dialog */
