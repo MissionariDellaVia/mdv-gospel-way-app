@@ -154,27 +154,47 @@ export default {
     // SIMPLIFIED SELECTION HANDLING
     // ====================================
     const selectionTimeout = ref(null);
+    const isProcessingHighlight = ref(false);
 
     function handleTextSelection() {
         if (!highlightModeActive.value) return;
+
+        // Prevent re-entry while processing
+        if (isProcessingHighlight.value) return;
 
         // Clear any existing timeout
         if (selectionTimeout.value) {
             clearTimeout(selectionTimeout.value);
         }
 
-        // Debounce selection handling
+        // Debounce selection handling - longer delay for iOS stability
+        const delay = highlighter.isIOS() ? 200 : 100;
+
         selectionTimeout.value = setTimeout(() => {
+            // Double-check we're not already processing
+            if (isProcessingHighlight.value) return;
+
             const selection = highlighter.getCurrentSelection();
             const validRange = highlighter.handleTextSelection(selection);
 
             if (validRange) {
+                // Lock to prevent duplicate highlights
+                isProcessingHighlight.value = true;
+
                 selectedRange.value = validRange;
 
                 // Auto-apply with current color from props
                 applyHighlight(currentHighlightColor.value);
+
+                // Clear the selection to prevent re-triggering
+                window.getSelection()?.removeAllRanges();
+
+                // Unlock after a short delay
+                setTimeout(() => {
+                    isProcessingHighlight.value = false;
+                }, 300);
             }
-        }, 100); // Unified timeout for all devices
+        }, delay);
     }
 
     // Remove unused function
@@ -259,21 +279,12 @@ export default {
     // ====================================
     function setupSelectionListeners() {
         // Use a unified approach for all devices
+        // mouseup for desktop, touchend for mobile
         document.addEventListener('mouseup', handleTextSelection);
         document.addEventListener('touchend', handleTextSelection, { passive: true });
 
-        // Also listen for selection changes for better mobile support
-        document.addEventListener('selectionchange', () => {
-            if (highlightModeActive.value) {
-                // Small delay to allow selection to stabilize
-                setTimeout(() => {
-                    const selection = highlighter.getCurrentSelection();
-                    if (selection) {
-                        handleTextSelection();
-                    }
-                }, 50);
-            }
-        });
+        // Note: We intentionally do NOT use 'selectionchange' event here
+        // because on iOS it fires too frequently and causes duplicate highlights
     }
 
     function cleanupSelectionListeners() {
@@ -283,10 +294,12 @@ export default {
             selectionTimeout.value = null;
         }
 
+        // Reset processing flag
+        isProcessingHighlight.value = false;
+
         // Remove event listeners
         document.removeEventListener('mouseup', handleTextSelection);
         document.removeEventListener('touchend', handleTextSelection);
-        document.removeEventListener('selectionchange', handleTextSelection);
     }
 
     // ====================================
