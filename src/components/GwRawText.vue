@@ -19,6 +19,7 @@ const props = defineProps({
   title: String,
   heading: String,
   text: String,
+  reference: String,
   showDivider: Boolean,
   zoomLevel: {
     type: Number,
@@ -30,10 +31,28 @@ const cleanedText = computed(() => {
   if (!props.text) return '';
   // Rimuove placeholder IMG (legacy) e sanitizza HTML per sicurezza
   const cleaned = props.text.replaceAll(/IMG\d/gm, '');
-  return DOMPurify.sanitize(cleaned, {
+  let sanitized = DOMPurify.sanitize(cleaned, {
     ALLOWED_TAGS: ['p', 'div', 'span', 'strong', 'em', 'b', 'i', 'a', 'br', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     ALLOWED_ATTR: ['href', 'target', 'style', 'class']
   });
+
+  // Appende il riferimento alla fine del testo se presente
+  if (props.reference) {
+    const refSpan = ` <span class="gospel-reference">(${props.reference})</span>`;
+    // Cerca l'ultimo tag di chiusura </p> o </div> per inserire il riferimento prima
+    const lastPClose = sanitized.lastIndexOf('</p>');
+    const lastDivClose = sanitized.lastIndexOf('</div>');
+    const insertPos = Math.max(lastPClose, lastDivClose);
+
+    if (insertPos > -1) {
+      sanitized = sanitized.slice(0, insertPos) + refSpan + sanitized.slice(insertPos);
+    } else {
+      // Se non ci sono tag, appende alla fine
+      sanitized += refSpan;
+    }
+  }
+
+  return sanitized;
 })
 
 // Calculate sizes based on zoom level
@@ -146,6 +165,13 @@ const zoomStyle = computed(() => {
   color: #281D02FF !important;
   font-size: 1.2rem !important;
   font-style: italic;
+}
+
+.html-raw:deep(.gospel-reference) {
+  color: #A67D51;
+  font-style: italic;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .html-raw:deep(a) {

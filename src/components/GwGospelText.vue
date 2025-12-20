@@ -14,6 +14,7 @@
       <gw-raw-text
           :title="'Dal vangelo secondo ' + evangelist"
           :text="gospel"
+          :reference="textRef"
           :showDivider="false"
           :zoomLevel="zoomLevel"
       />
@@ -188,3 +189,4 @@ defineExpose({
   totalHighlightCount
 })
 </script>
+
