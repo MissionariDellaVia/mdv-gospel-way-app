@@ -95,7 +95,7 @@
           :gospel="currentGospelWay.gospel?.text"
           :comment="currentGospelWay.comments?.main"
           :textDate="textDate"
-          :extra="videos?.length ? null : currentGospelWay.comments?.reflection"
+          :extra="currentGospelWay.comments?.reflection"
           :clean="true"
           :show-divider="true"
           :zoom-level="zoomLevel"
