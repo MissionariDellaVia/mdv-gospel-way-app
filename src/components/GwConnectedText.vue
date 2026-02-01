@@ -4,8 +4,8 @@
         :show="!!show"
         :title="title"
         @close="cleanDialogConnected">
-      <div class="html-raw my-1" v-html="sanitizedContent"></div>
-      <div class="html-raw my-1" v-html="sanitizedExtra"></div>
+      <div class="html-raw my-1" :class="{'zoomed': isZoomed}" :style="{'--zoom-factor': zoomFactor}" v-html="sanitizedContent"></div>
+      <div class="html-raw my-1" :class="{'zoomed': isZoomed}" :style="{'--zoom-factor': zoomFactor}" v-html="sanitizedExtra"></div>
     </base-dialog>
 
     <section v-show="relatedData && relatedData.length > 0">
@@ -28,9 +28,16 @@
 import {ref, defineProps, computed} from 'vue';
 import DOMPurify from 'dompurify';
 
-defineProps({
+const props = defineProps({
   relatedData: Array,
+  zoomLevel: {
+    type: Number,
+    default: 100
+  }
 })
+
+const zoomFactor = computed(() => props.zoomLevel / 100)
+const isZoomed = computed(() => props.zoomLevel !== 100)
 
 const show = ref(false)
 const title = ref(null)
@@ -112,5 +119,15 @@ function cleanDialogConnected() {
 
 .html-raw:deep(a):hover {
   color: #ecb071;
+}
+
+/* Zoom support */
+.html-raw.zoomed:deep(p),
+.html-raw.zoomed:deep(div),
+.html-raw.zoomed:deep(span),
+.html-raw.zoomed:deep(em),
+.html-raw.zoomed:deep(strong),
+.html-raw.zoomed:deep(a) {
+  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
 }
 </style>
