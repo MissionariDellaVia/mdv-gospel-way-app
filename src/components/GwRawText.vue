@@ -72,25 +72,6 @@ const zoomStyle = computed(() => {
 })
 </script>
 
-<style>
-/* Global styles to affect deeply nested content */
-.zoomed .content-area p,
-.zoomed .content-area div,
-.zoomed .content-area span:not(.fa-solid),
-.zoomed .content-area li,
-.zoomed .content-area blockquote {
-  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
-}
-
-.zoomed .content-area strong,
-.zoomed .content-area em,
-.zoomed .content-area b,
-.zoomed .content-area i,
-.zoomed .content-area a {
-  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
-}
-</style>
-
 <style scoped>
 .heading {
   color: #a57c4f;
@@ -105,7 +86,7 @@ const zoomStyle = computed(() => {
 .html-raw:deep(p), .html-raw:deep(div) {
   font-family: 'Barlow Semi Condensed', sans-serif;
   color: #281D02FF !important;
-  font-size: 1.2rem !important;
+  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
 
   /* Improved text alignment properties */
   text-align: justify;
@@ -147,14 +128,14 @@ const zoomStyle = computed(() => {
 .html-raw:deep(strong) {
   font-family: 'Barlow Semi Condensed', sans-serif;
   color: #A67D51 !important;
-  font-size: 1.2rem !important;
+  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
   font-weight: 600;
 }
 
 .html-raw:deep(span) {
   font-family: 'Barlow Semi Condensed', sans-serif;
   color: #281D02FF !important;
-  font-size: 1.2rem !important;
+  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
   /* Preserve inline spacing */
   word-spacing: inherit;
   letter-spacing: inherit;
@@ -163,7 +144,7 @@ const zoomStyle = computed(() => {
 .html-raw:deep(em) {
   font-family: 'Barlow Semi Condensed', sans-serif;
   color: #281D02FF !important;
-  font-size: 1.2rem !important;
+  font-size: calc(1.2rem * var(--zoom-factor, 1)) !important;
   font-style: italic;
 }
 
