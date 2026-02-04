@@ -23,6 +23,11 @@ const routes = [
         // Lazy loaded - main content page
         component: () => import(/* webpackChunkName: "gospel" */ '@/views/GospelWay.vue')
     },
+    {
+        path: '/privacy',
+        name: 'PrivacyPolicy',
+        component: () => import(/* webpackChunkName: "privacy" */ '@/views/PrivacyPolicy.vue')
+    },
     {path: '/:notFound(.*)', component: MdvHome}
 ]
 
